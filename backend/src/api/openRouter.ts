@@ -32,9 +32,6 @@ interface OpenRouterResponse {
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
-if (!OPENROUTER_API_KEY) {
-  console.warn("Warning: OPENROUTER_API_KEY not set");
-}
 
 const MODEL_MAP: Record<AgentRole, string> = {
   "Research Planner": "openai/gpt-4o-mini",
