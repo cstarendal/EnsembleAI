@@ -6,9 +6,8 @@ interface ResearchQuestionFormProps {
 }
 
 function ResearchQuestionForm({ onSubmit }: ResearchQuestionFormProps): JSX.Element {
-  const { question, error, isSubmitting, handleChange, handleSubmit } = useResearchQuestionController(
-    onSubmit ? { onSubmit } : {}
-  );
+  const { question, error, isSubmitting, handleChange, handleSubmit } =
+    useResearchQuestionController(onSubmit ? { onSubmit } : {});
 
   return (
     <form onSubmit={handleSubmit} className="space-y-md">

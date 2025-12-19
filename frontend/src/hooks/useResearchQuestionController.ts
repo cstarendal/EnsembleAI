@@ -66,4 +66,3 @@ export function useResearchQuestionController(
 
   return { question, error, isSubmitting, handleChange, handleSubmit };
 }
-

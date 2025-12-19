@@ -16,4 +16,3 @@ export const useResearchStore = create<ResearchStoreState>((set) => ({
   setSession: (session) => set({ session }),
   clearSession: () => set({ sessionId: null, session: null }),
 }));
-

@@ -72,7 +72,9 @@ describe("useResearchQuestionController", () => {
     const { result } = renderHook(() => useResearchQuestionController({ onSubmit }));
 
     act(() => {
-      result.current.handleChange(makeChangeEvent("What are the effects of universal basic income?"));
+      result.current.handleChange(
+        makeChangeEvent("What are the effects of universal basic income?")
+      );
     });
 
     await act(async () => {
@@ -96,7 +98,9 @@ describe("useResearchQuestionController", () => {
     const { result } = renderHook(() => useResearchQuestionController({ onSubmit }));
 
     act(() => {
-      result.current.handleChange(makeChangeEvent("What are the effects of universal basic income?"));
+      result.current.handleChange(
+        makeChangeEvent("What are the effects of universal basic income?")
+      );
     });
 
     act(() => {
@@ -121,7 +125,9 @@ describe("useResearchQuestionController", () => {
     const { result } = renderHook(() => useResearchQuestionController({}));
 
     act(() => {
-      result.current.handleChange(makeChangeEvent("What are the effects of universal basic income?"));
+      result.current.handleChange(
+        makeChangeEvent("What are the effects of universal basic income?")
+      );
     });
 
     await act(async () => {
@@ -131,4 +137,3 @@ describe("useResearchQuestionController", () => {
     expect(result.current.error).toBe("Failed to start research session");
   });
 });
-

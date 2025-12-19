@@ -34,4 +34,3 @@ export async function getSession(sessionId: string): Promise<Session> {
 export function getSessionStream(sessionId: string): EventSource {
   return new EventSource(`/api/sessions/${sessionId}/stream`);
 }
-
