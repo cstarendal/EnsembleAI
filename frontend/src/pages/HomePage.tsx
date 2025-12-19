@@ -3,7 +3,7 @@ function HomePage(): JSX.Element {
     <div className="container mx-auto p-lg">
       <header className="mb-xl">
         <h1 className="text-4xl font-bold text-foreground">Ensemble AI Research System</h1>
-        <p className="text-muted-foreground mt-md">Multi-model debate for research questions</p>
+            <p className="text-muted-foreground mt-md">Multi-agent debate for research questions</p>
       </header>
       <main className="bg-card p-lg rounded-lg shadow-card">
         <p className="text-foreground">
