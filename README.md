@@ -102,6 +102,8 @@ See [DESIGN.md](./DESIGN.md) for the complete design document including:
 - UI/UX design
 - Implementation plan
 
+See [docs/PROJECT_LEARNINGS.md](./docs/PROJECT_LEARNINGS.md) for the reusable architecture, quality, testing, and operational playbook carried over from prior projects.
+
 ## Development Status
 
 🚧 **In Development** - This project is currently being built according to the design document.
