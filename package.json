@@ -25,7 +25,8 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "typecheck": "npm run typecheck:frontend && npm run typecheck:backend",
     "typecheck:frontend": "cd frontend && npm run typecheck",
-    "typecheck:backend": "cd backend && npm run typecheck"
+    "typecheck:backend": "cd backend && npm run typecheck",
+    "lint:ubiquitous-language": "node scripts/lint-ubiquitous-language.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,json,css}\"",
-    "lint:design-tokens": "node scripts/check-design-tokens.js"
+    "lint:design-tokens": "node scripts/check-design-tokens.js",
+    "lint:ubiquitous-language": "node ../scripts/lint-ubiquitous-language.js"
   },
   "dependencies": {
     "react": "^18.2.0",

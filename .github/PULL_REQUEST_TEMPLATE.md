@@ -19,6 +19,7 @@ Brief description of changes
 ## Checklist
 
 - [ ] Code follows project standards (see `.cursorrules`)
+- [ ] Ubiquitous language used (registered domain terms only)
 - [ ] All functions < 100 lines
 - [ ] Complexity < 12
 - [ ] Design tokens used (no hardcoded values)

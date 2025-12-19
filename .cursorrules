@@ -308,6 +308,58 @@ const sanitized = sanitizeString(parsed.text);
 7. **Code Review:** All PRs reviewed before merge
 8. **Documentation:** Keep docs up-to-date
 
+## Ubiquitous Language
+
+### Core Principle
+
+**"One term, one meaning, everywhere"**
+
+All domain concepts must use consistent terminology across:
+- Code (variable names, function names, types)
+- UI (labels, messages, tooltips)
+- Documentation (guides, comments, README)
+- API (endpoints, request/response)
+- Tests (test names, descriptions)
+
+### Domain Terms Registry
+
+All terms are defined in:
+- `frontend/src/constants/ubiquitousLanguage.ts`
+- `backend/src/constants/ubiquitousLanguage.ts`
+
+**Key Terms:**
+- `Research` (not "query", "analysis")
+- `Question` (not "input", "prompt")
+- `Session` (not "job", "task", "request")
+- `Agent` (not "model", "AI", "bot")
+- `Debate` (not "chat", "discussion", "conversation")
+- `Round` (not "phase", "step", "stage")
+- `Source` (not "reference", "link")
+- `Synthesis` (not "summary")
+- `Message` (not "response", "output")
+
+### Validation
+
+Run validation script:
+```bash
+npm run lint:ubiquitous-language
+```
+
+This checks for:
+- Forbidden generic terms (query, model, chat, etc.)
+- Inconsistent terminology
+- Missing domain terms
+
+### Rules
+
+1. **Always use registered terms** from `ubiquitousLanguage.ts`
+2. **Never use generic terms** (query, model, chat, etc.)
+3. **Use types** to enforce correct terms (`AgentRole`, `SessionStatus`)
+4. **Validate before commit** - runs in pre-commit hook
+5. **Check in code review** - verify terminology consistency
+
+See `docs/UBIQUITOUS_LANGUAGE.md` for complete guide.
+
 ## Project-Specific Notes
 
 ### Backend Considerations

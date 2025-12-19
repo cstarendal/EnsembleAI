@@ -28,6 +28,8 @@ jobs:
         run: npm run typecheck:frontend
       - name: Type check backend
         run: npm run typecheck:backend
+      - name: Validate ubiquitous language
+        run: npm run lint:ubiquitous-language
 
   test-frontend:
     name: Test Frontend
