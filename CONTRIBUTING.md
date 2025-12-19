@@ -89,6 +89,25 @@ This project adheres to a code of conduct that all contributors are expected to 
 
 ## Code Standards
 
+### Ubiquitous Language (STRICTLY ENFORCED)
+
+**Core Principle:** One term, one meaning, everywhere.
+
+- **Always use registered domain terms** from `ubiquitousLanguage.ts`
+- **Never use generic terms** (query, model, chat, discussion, etc.)
+- **Use types** to enforce correct terms (`AgentRole`, `SessionStatus`)
+- **Validate before commit:** `npm run lint:ubiquitous-language`
+
+**Key Terms:**
+- Use `Research` (not "query", "analysis")
+- Use `Agent` (not "model", "AI")
+- Use `Debate` (not "chat", "discussion")
+- Use `Session` (not "job", "task")
+- Use `Source` (not "reference", "link")
+- Use `Synthesis` (not "summary")
+
+See `docs/UBIQUITOUS_LANGUAGE.md` for complete guide.
+
 ### Strict Limits (Enforced)
 
 - **Max 100 lines per function** - NO EXCEPTIONS
