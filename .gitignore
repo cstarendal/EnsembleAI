@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 yarn.lock
 
 # Environment variables
@@ -32,3 +31,7 @@ coverage/
 *.tmp
 *.temp
 
+
+# Playwright
+frontend/playwright-report/
+frontend/test-results/
