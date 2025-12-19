@@ -2,9 +2,9 @@
 
 /**
  * Design Token Validation Script
- * 
+ *
  * Checks for hardcoded values that should use design tokens instead.
- * 
+ *
  * Usage: npm run lint:design-tokens
  */
 
@@ -126,10 +126,7 @@ function scanDirectory(dir) {
       }
     } else if (stat.isFile()) {
       const ext = extname(fullPath);
-      if (
-        [".ts", ".tsx", ".js", ".jsx", ".css"].includes(ext) &&
-        !shouldIgnoreFile(fullPath)
-      ) {
+      if ([".ts", ".tsx", ".js", ".jsx", ".css"].includes(ext) && !shouldIgnoreFile(fullPath)) {
         files.push(fullPath);
       }
     }
@@ -185,4 +182,3 @@ function main() {
 }
 
 main();
-

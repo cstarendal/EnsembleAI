@@ -9,26 +9,31 @@ This document provides a balanced view of the Ubiquitous Language approach, incl
 ## What We Get (Benefits)
 
 ### 1. **Consistency & Clarity**
+
 - **Benefit:** Everyone uses the same terms everywhere
 - **Impact:** New developers understand code faster
 - **Example:** `researchSession` vs `query` vs `job` - one term, clear meaning
 
 ### 2. **Type Safety**
+
 - **Benefit:** TypeScript prevents wrong terms
 - **Impact:** Catches errors at compile time
 - **Example:** `AgentRole` type ensures only valid roles
 
 ### 3. **Better Communication**
+
 - **Benefit:** Code, UI, docs all speak the same language
 - **Impact:** Less confusion in discussions
 - **Example:** "We need to fix the debate round" vs "We need to fix the chat phase"
 
 ### 4. **Domain-Driven Design**
+
 - **Benefit:** Code reflects business domain
 - **Impact:** Easier to reason about system
 - **Example:** `startResearch()` clearly shows what it does
 
 ### 5. **Maintainability**
+
 - **Benefit:** Consistent naming makes refactoring easier
 - **Impact:** Find/replace works reliably
 - **Example:** Search for "research" finds all related code
@@ -38,26 +43,31 @@ This document provides a balanced view of the Ubiquitous Language approach, incl
 ## The Burden (Costs)
 
 ### 1. **Initial Setup Overhead**
+
 - **Cost:** Time to define all terms upfront
 - **Impact:** Slower start, but pays off later
 - **Mitigation:** Start with core terms, add as needed
 
 ### 2. **Learning Curve**
+
 - **Cost:** Team must learn domain terms
 - **Impact:** Slower initial development
 - **Mitigation:** Good documentation, examples
 
 ### 3. **Validation Overhead**
+
 - **Cost:** Scripts to run, CI time
 - **Impact:** ~5-10 seconds per CI run
 - **Mitigation:** Fast scripts, parallel execution
 
 ### 4. **Rigidity**
+
 - **Cost:** Can't use familiar terms (query, model, etc.)
 - **Impact:** Feels restrictive initially
 - **Mitigation:** Clear benefits, team buy-in
 
 ### 5. **Maintenance**
+
 - **Cost:** Must update registry when adding terms
 - **Impact:** Extra step in development
 - **Mitigation:** Simple process, documented
@@ -67,21 +77,25 @@ This document provides a balanced view of the Ubiquitous Language approach, incl
 ## Problems It Creates
 
 ### 1. **False Positives in Validation**
+
 - **Problem:** Script might flag valid compound words
 - **Example:** "researchSession" contains "search" (but it's valid)
 - **Solution:** Script uses context-aware detection
 
 ### 2. **AI Code Generation Challenges**
+
 - **Problem:** AI might use wrong terms initially
 - **Example:** AI generates `processQuery()` instead of `startResearch()`
 - **Solution:** See "AI Integration" section below
 
 ### 3. **Onboarding Friction**
+
 - **Problem:** New contributors must learn terms
 - **Example:** "Why can't I use 'query'?"
 - **Solution:** Clear docs, helpful error messages
 
 ### 4. **Refactoring Existing Code**
+
 - **Problem:** Must update all occurrences
 - **Example:** Changing "query" → "research" in 50 files
 - **Solution:** Find/replace with validation
@@ -93,6 +107,7 @@ This document provides a balanced view of the Ubiquitous Language approach, incl
 ### The Challenge
 
 AI models (like GPT-4, Claude) are trained on generic codebases that use:
+
 - `query` (not `research`)
 - `model` (not `agent`)
 - `chat` (not `debate`)
@@ -107,7 +122,7 @@ Always include domain terms in AI prompts:
 
 ```typescript
 // ✅ Good prompt
-"Create a function to start a research session. 
+"Create a function to start a research session.
 Use domain terms: Research, Session, Agent, Debate.
 Never use: query, model, chat, discussion."
 
@@ -131,7 +146,7 @@ TypeScript types help AI understand:
 
 ```typescript
 // ✅ Types guide AI
-function startResearch(question: string): Promise<ResearchSession>
+function startResearch(question: string): Promise<ResearchSession>;
 
 // AI sees: "Oh, it's ResearchSession, not Query"
 ```
@@ -150,6 +165,7 @@ Always use domain terms:
 #### 5. **Iterative Refinement**
 
 Workflow:
+
 1. AI generates code (might have wrong terms)
 2. Run validation (`lint:ubiquitous-language`)
 3. AI fixes violations
@@ -162,19 +178,22 @@ Workflow:
 ### Recommended Process
 
 1. **Generate Code with Context**
+
    ```
-   "Create a ResearchSession type using domain terms from 
+   "Create a ResearchSession type using domain terms from
    ubiquitousLanguage.ts. Use AgentRole, not string."
    ```
 
 2. **Validate Immediately**
+
    ```bash
    npm run lint:ubiquitous-language
    ```
 
 3. **Fix Violations**
+
    ```
-   "Fix ubiquitous language violations: replace 'query' with 
+   "Fix ubiquitous language violations: replace 'query' with
    'research', 'model' with 'agent'"
    ```
 
@@ -186,6 +205,7 @@ Workflow:
 ### Example: AI Code Generation
 
 **Initial AI Output (Wrong Terms):**
+
 ```typescript
 // ❌ AI generates with generic terms
 interface Query {
@@ -201,9 +221,10 @@ function processQuery(input: string): Promise<Query> {
 ```
 
 **After Validation & Fix:**
+
 ```typescript
 // ✅ Fixed with domain terms
-import { AGENT_ROLES, type AgentRole } from '@/constants/ubiquitousLanguage';
+import { AGENT_ROLES, type AgentRole } from "@/constants/ubiquitousLanguage";
 
 interface ResearchSession {
   sessionId: string;
@@ -223,14 +244,14 @@ function startResearch(question: string): Promise<ResearchSession> {
 
 ### Time Investment
 
-| Activity | Without UL | With UL | Difference |
-|----------|-----------|---------|------------|
-| Initial setup | 0 min | 30 min | +30 min |
-| Writing code | 1x | 1.1x | +10% |
-| Code review | 1x | 0.9x | -10% (less confusion) |
-| Onboarding | 1x | 1.2x | +20% (learn terms) |
-| Refactoring | 1x | 0.8x | -20% (consistent terms) |
-| Bug fixes | 1x | 0.9x | -10% (clearer code) |
+| Activity      | Without UL | With UL | Difference              |
+| ------------- | ---------- | ------- | ----------------------- |
+| Initial setup | 0 min      | 30 min  | +30 min                 |
+| Writing code  | 1x         | 1.1x    | +10%                    |
+| Code review   | 1x         | 0.9x    | -10% (less confusion)   |
+| Onboarding    | 1x         | 1.2x    | +20% (learn terms)      |
+| Refactoring   | 1x         | 0.8x    | -20% (consistent terms) |
+| Bug fixes     | 1x         | 0.9x    | -10% (clearer code)     |
 
 **Net:** Slight initial cost, long-term savings.
 
@@ -265,26 +286,31 @@ function startResearch(question: string): Promise<ResearchSession> {
 ## Mitigation Strategies
 
 ### 1. **Start Small**
+
 - Begin with core terms (Research, Agent, Debate)
 - Add more as needed
 - Don't over-engineer upfront
 
 ### 2. **Good Tooling**
+
 - Fast validation scripts
 - Clear error messages
 - Helpful suggestions
 
 ### 3. **Documentation**
+
 - Clear examples
 - Common mistakes guide
 - Quick reference
 
 ### 4. **Team Buy-in**
+
 - Explain benefits
 - Show examples
 - Make it easy to follow
 
 ### 5. **AI-Friendly**
+
 - Include terms in prompts
 - Use types to guide AI
 - Validate and fix iteratively
@@ -364,7 +390,7 @@ Use types to guide AI:
 
 ```typescript
 // ✅ Types help AI
-import { type AgentRole, AGENT_ROLES } from '@/constants/ubiquitousLanguage';
+import { type AgentRole, AGENT_ROLES } from "@/constants/ubiquitousLanguage";
 
 function createAgent(role: AgentRole): Agent {
   // AI sees AgentRole type, uses correct terms
@@ -386,6 +412,7 @@ Don't expect perfect first try:
 ## Summary
 
 ### Benefits
+
 - ✅ Consistency & clarity
 - ✅ Type safety
 - ✅ Better communication
@@ -393,6 +420,7 @@ Don't expect perfect first try:
 - ✅ Maintainability
 
 ### Costs
+
 - ⚠️ Initial setup (30 min)
 - ⚠️ Learning curve
 - ⚠️ Validation overhead (~5-10s)
@@ -400,12 +428,14 @@ Don't expect perfect first try:
 - ⚠️ Maintenance (update registry)
 
 ### Problems
+
 - ⚠️ False positives (rare)
 - ⚠️ AI needs guidance
 - ⚠️ Onboarding friction
 - ⚠️ Refactoring effort
 
 ### AI Integration
+
 - ✅ Include terms in prompts
 - ✅ Validate after generation
 - ✅ Use types to guide AI
@@ -434,4 +464,3 @@ Don't expect perfect first try:
 5. **Update registry when adding new terms**
 
 **Remember:** The burden is upfront, but the benefits compound over time.
-

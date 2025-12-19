@@ -28,18 +28,21 @@ A comprehensive synthesis of architecture, design, code, testing, and operationa
 **Pattern:** Clear separation of concerns using React hooks to implement MVC architecture.
 
 **Structure:**
+
 - **Model:** Custom hooks managing state & persistence (e.g., `useWorkshopData.ts`)
 - **View:** Pure React components (presentation only, minimal logic)
 - **Controller:** Custom hooks containing business logic & form handling (e.g., `useTimelineForm.ts`, `useGratitudeController.ts`)
 - **Pages:** Orchestrate Model ↔ Controller ↔ View
 
 **Key Learnings:**
+
 - Components should receive callbacks, not direct state mutations
 - Extract complex logic from components into controller hooks
 - Keep components focused on rendering and user interaction
 - Use services for cross-cutting concerns (storage, sharing, analytics)
 
 **Example Pattern:**
+
 ```
 // Page (Orchestrator)
 WorkshopStepPage.tsx
@@ -52,6 +55,7 @@ WorkshopStepPage.tsx
 ```
 
 **Anti-patterns to Avoid:**
+
 - Business logic in components
 - Direct state mutations from components
 - Tight coupling between pages and hooks (use service layer for complex workflows)
@@ -59,12 +63,14 @@ WorkshopStepPage.tsx
 ### File Structure & Organization
 
 **Naming Conventions:**
+
 - **Components:** PascalCase.tsx (e.g., `ChapterCover.tsx`)
 - **Hooks:** camelCase with `use` prefix (e.g., `useTimelineForm.ts`)
 - **Utils:** camelCase.ts (e.g., `validation.ts`)
 - **Constants:** SCREAMING_SNAKE_CASE inside camelCase.ts files
 
 **Directory Structure:**
+
 ```
 src/
   components/         # React components (Views)
@@ -89,6 +95,7 @@ src/
 ### Strict Limits (Enforced via ESLint)
 
 **Function Limits:**
+
 - Max 100 lines per function (strictly enforced in `src/`)
 - Max complexity: 12
 - Max depth: 4
@@ -96,11 +103,13 @@ src/
 - Max statements: 20
 
 **File Size Budget:**
+
 - Warn when source file grows beyond ~400 lines
 - Refactor/split when approaching ~450+ lines
 - Exemptions: tests, `src/components/ui/**` (shadcn primitives)
 
 **Rationale:**
+
 - Forces decomposition and single responsibility
 - Improves readability and maintainability
 - Makes code review easier
@@ -109,11 +118,13 @@ src/
 ### TypeScript Best Practices
 
 **Explicit Return Types:**
+
 - Required for exported functions (module boundaries)
 - Optional for internal functions
 - Use type imports: `import type { ... }`
 
 **Type Safety:**
+
 - Use Zod schemas for runtime validation
 - Leverage TypeScript's type system for compile-time safety
 - Avoid `any` - use `unknown` and type guards instead
@@ -121,12 +132,14 @@ src/
 ### Code Style Rules
 
 **ESLint Configuration:**
+
 - Complexity rules enforced as errors in `src/`
 - Relaxed rules for tests, E2E, and scripts
 - Import ordering and deduplication
 - Accessibility rules (jsx-a11y)
 
 **Prettier:**
+
 - Automatic formatting on save
 - Consistent code style across team
 - Integrated with lint-staged for pre-commit
@@ -140,6 +153,7 @@ src/
 **Core Principle:** Never hardcode values - always use tokens.
 
 **Token Categories:**
+
 - Colors: Semantic palette (background, foreground, primary, secondary, etc.)
 - Spacing: Scale from `--space-xs` (0.25rem) to `--space-4xl` (6rem)
 - Typography: Font families, sizes, line heights
@@ -148,6 +162,7 @@ src/
 - Transitions: Fast, smooth, bounce
 
 **Usage:**
+
 ```
 // Tailwind classes (preferred)
 <div className="p-lg bg-card rounded-[var(--radius)] shadow-card">
@@ -160,11 +175,13 @@ src/
 ```
 
 **Dark Mode:**
+
 - All tokens have dark mode variants
 - Automatic via `.dark` class
 - Consistent theming across app
 
 **Validation:**
+
 - Script to check for hardcoded values: `npm run lint:design-tokens`
 - Catches violations in CI/CD
 
@@ -173,6 +190,7 @@ src/
 **Pattern:** Use shadcn/ui primitives for consistent UI components.
 
 **Benefits:**
+
 - Accessible by default
 - Customizable (copy-paste, not npm dependency)
 - Consistent design language
@@ -183,6 +201,7 @@ src/
 ### Responsive Design
 
 **Approach:**
+
 - Mobile-first design
 - Use Tailwind responsive utilities
 - Test on multiple devices (Playwright projects)
@@ -195,6 +214,7 @@ src/
 ### Test-Driven Development (TDD)
 
 **Workflow:**
+
 1. Write test first
 2. Run test (fail)
 3. Implement minimal code
@@ -208,6 +228,7 @@ src/
 **E2E Tests (Playwright):** `e2e/*.spec.ts` (Chromium baseline in CI; full suite manual)
 
 **Deterministic E2E:**
+
 - Set language explicitly (`?lang=sv`)
 - Clear state in `beforeEach`
 - Semantic selectors (`getByRole`, `getByLabelText`)

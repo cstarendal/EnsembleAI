@@ -25,6 +25,7 @@ frontend/src/
 ```
 
 **Rule:** Most styling should be done with Tailwind classes. Only use separate CSS files for:
+
 - Complex animations
 - Component-specific styles that are hard to express in Tailwind
 - Third-party component overrides
@@ -49,13 +50,14 @@ All tokens are defined in `src/styles/design-tokens.css`:
 Colors use HSL format in CSS variables (without `hsl()` wrapper):
 
 ```css
---background: 0 0% 100%;  /* Light mode: white */
+--background: 0 0% 100%; /* Light mode: white */
 ```
 
 In dark mode:
+
 ```css
 .dark {
-  --background: 222.2 84% 4.9%;  /* Dark mode: dark blue */
+  --background: 222.2 84% 4.9%; /* Dark mode: dark blue */
 }
 ```
 
@@ -82,7 +84,7 @@ For complex styles or when Tailwind doesn't have a class:
 
 ```tsx
 // ✅ Good - Uses CSS variables directly
-<div 
+<div
   className="my-component"
   style={{
     padding: 'var(--space-lg)',
@@ -140,6 +142,7 @@ theme: {
 ```
 
 This allows you to use:
+
 - `bg-card` instead of `bg-[hsl(var(--card))]`
 - `p-lg` instead of `p-[var(--space-lg)]`
 
@@ -160,6 +163,7 @@ Use the spacing scale consistently:
 ```
 
 **Available spacing:**
+
 - `xs` = 0.25rem (4px)
 - `sm` = 0.5rem (8px)
 - `md` = 1rem (16px)
@@ -189,6 +193,7 @@ Use semantic color names, not raw colors:
 ```
 
 **Available semantic colors:**
+
 - `background` / `foreground` - Base colors
 - `card` / `card-foreground` - Card backgrounds
 - `primary` / `primary-foreground` - Primary actions
@@ -214,6 +219,7 @@ Dark mode is automatic via `.dark` class on root element:
 ```
 
 **Implementation:**
+
 - Add/remove `.dark` class on `<html>` or root element
 - All tokens automatically switch
 - No need for `dark:` prefixes in most cases
@@ -252,6 +258,7 @@ Use transition tokens for consistent animations:
 ```
 
 **Available transitions:**
+
 - `fast` = 150ms ease
 - `smooth` = 300ms ease
 - `bounce` = 500ms cubic-bezier
@@ -278,6 +285,7 @@ Use Tailwind's responsive utilities:
 ### When to Use Separate CSS Files
 
 Only use separate CSS files for:
+
 1. **Complex animations** that are hard in Tailwind
 2. **Third-party component overrides**
 3. **Complex selectors** (e.g., `:has()`, `:nth-child()` patterns)
@@ -286,7 +294,7 @@ Only use separate CSS files for:
 
 ```tsx
 // Component file
-import './debate-timeline.css';
+import "./debate-timeline.css";
 
 export function DebateTimeline() {
   return <div className="debate-timeline">...</div>;
@@ -303,8 +311,12 @@ export function DebateTimeline() {
 
 /* Complex animation */
 @keyframes slide-in {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 .debate-timeline-item {
@@ -382,7 +394,7 @@ export function Container({ children }: { children: React.ReactNode }) {
 
 ```tsx
 // debate-message.tsx
-import './debate-message.css';
+import "./debate-message.css";
 
 export function DebateMessage() {
   return <div className="debate-message">...</div>;
@@ -418,6 +430,7 @@ npm run lint:design-tokens
 ```
 
 This checks for:
+
 - Hardcoded color values (`#fff`, `rgb()`, `rgba()`)
 - Hardcoded spacing values (`px`, `rem` without tokens)
 - Hardcoded shadows
@@ -426,6 +439,7 @@ This checks for:
 ### Manual Checklist
 
 Before committing, check:
+
 - [ ] No hardcoded colors (use semantic tokens)
 - [ ] No hardcoded spacing (use spacing scale)
 - [ ] No hardcoded shadows (use shadow tokens)
@@ -439,17 +453,19 @@ Before committing, check:
 ### Process
 
 1. **Add to `design-tokens.css`**:
+
    ```css
    :root {
      --new-token: value;
    }
-   
+
    .dark {
      --new-token: dark-value;
    }
    ```
 
 2. **Add to `tailwind.config.js`** (if needed):
+
    ```js
    theme: {
      extend: {
@@ -500,4 +516,3 @@ Before committing, check:
 ---
 
 **Remember:** If you find yourself hardcoding a value, stop and ask: "Is there a design token for this?" If not, consider adding one!
-

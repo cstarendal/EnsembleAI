@@ -7,6 +7,7 @@ This project enforces a strict **Ubiquitous Language** approach - the same terms
 **"One term, one meaning, everywhere"**
 
 Every domain concept has a single, well-defined term that is used consistently in:
+
 - Code (variable names, function names, types)
 - UI (labels, messages, tooltips)
 - Documentation (guides, comments, README)
@@ -19,50 +20,50 @@ Every domain concept has a single, well-defined term that is used consistently i
 
 ### Core Concepts
 
-| Term | Definition | Usage | Never Use |
-|------|------------|-------|-----------|
-| **Research** | The process of answering a user's question using multiple AI models | `researchSession`, `startResearch()` | investigation, analysis, query |
-| **Question** | The user's input query about a social policy topic | `question`, `userQuestion` | query, prompt, input |
-| **Session** | A single research instance from question to final answer | `sessionId`, `researchSession` | request, job, task |
-| **Agent** | An AI model with a specific role in the research process | `agent`, `AgentRole` | model, AI, bot |
-| **Role** | The function/purpose of an agent (e.g., Critic, Synthesizer) | `agentRole`, `Role` | type, kind, category |
-| **Debate** | The structured discussion between agents about research findings | `debate`, `debateRound` | discussion, conversation, chat |
-| **Round** | A single phase in the debate (Opening, Cross-Examination, etc.) | `debateRound`, `round` | phase, step, stage |
-| **Source** | A reference or citation found during research | `source`, `sources` | reference, citation, link |
-| **Synthesis** | The process of combining information into a coherent answer | `synthesis`, `synthesize()` | summary, combine, merge |
-| **Moderation** | The process of summarizing and judging the debate | `moderation`, `moderate()` | summary, conclusion, judgment |
-| **Timeline** | The chronological view of agent activities | `timeline`, `debateTimeline` | history, log, feed |
-| **Message** | A single communication from an agent | `message`, `agentMessage` | response, output, text |
-| **Opening Statement** | An agent's initial position in a debate round | `openingStatement` | initial, first, start |
-| **Cross-Examination** | Agents responding to each other's statements | `crossExamination` | response, reply, answer |
-| **Rebuttal** | Agents defending/revising their positions | `rebuttal` | defense, revision, update |
-| **Final Position** | An agent's concluding statement | `finalPosition` | conclusion, final, end |
-| **Consensus** | Points where all agents agree | `consensus`, `consensusPoints` | agreement, common ground |
-| **Disagreement** | Points where agents differ | `disagreement`, `disagreements` | conflict, difference, debate |
-| **Uncertainty** | Areas where information is incomplete or unclear | `uncertainty`, `uncertainties` | unknown, unclear, missing |
-| **Citation** | A reference to a source in the answer | `citation`, `citations` | reference, source link |
-| **Quality Rating** | Assessment of source reliability (1-5 stars) | `qualityRating` | score, rating, grade |
+| Term                  | Definition                                                          | Usage                                | Never Use                      |
+| --------------------- | ------------------------------------------------------------------- | ------------------------------------ | ------------------------------ |
+| **Research**          | The process of answering a user's question using multiple AI models | `researchSession`, `startResearch()` | investigation, analysis, query |
+| **Question**          | The user's input query about a social policy topic                  | `question`, `userQuestion`           | query, prompt, input           |
+| **Session**           | A single research instance from question to final answer            | `sessionId`, `researchSession`       | request, job, task             |
+| **Agent**             | An AI model with a specific role in the research process            | `agent`, `AgentRole`                 | model, AI, bot                 |
+| **Role**              | The function/purpose of an agent (e.g., Critic, Synthesizer)        | `agentRole`, `Role`                  | type, kind, category           |
+| **Debate**            | The structured discussion between agents about research findings    | `debate`, `debateRound`              | discussion, conversation, chat |
+| **Round**             | A single phase in the debate (Opening, Cross-Examination, etc.)     | `debateRound`, `round`               | phase, step, stage             |
+| **Source**            | A reference or citation found during research                       | `source`, `sources`                  | reference, citation, link      |
+| **Synthesis**         | The process of combining information into a coherent answer         | `synthesis`, `synthesize()`          | summary, combine, merge        |
+| **Moderation**        | The process of summarizing and judging the debate                   | `moderation`, `moderate()`           | summary, conclusion, judgment  |
+| **Timeline**          | The chronological view of agent activities                          | `timeline`, `debateTimeline`         | history, log, feed             |
+| **Message**           | A single communication from an agent                                | `message`, `agentMessage`            | response, output, text         |
+| **Opening Statement** | An agent's initial position in a debate round                       | `openingStatement`                   | initial, first, start          |
+| **Cross-Examination** | Agents responding to each other's statements                        | `crossExamination`                   | response, reply, answer        |
+| **Rebuttal**          | Agents defending/revising their positions                           | `rebuttal`                           | defense, revision, update      |
+| **Final Position**    | An agent's concluding statement                                     | `finalPosition`                      | conclusion, final, end         |
+| **Consensus**         | Points where all agents agree                                       | `consensus`, `consensusPoints`       | agreement, common ground       |
+| **Disagreement**      | Points where agents differ                                          | `disagreement`, `disagreements`      | conflict, difference, debate   |
+| **Uncertainty**       | Areas where information is incomplete or unclear                    | `uncertainty`, `uncertainties`       | unknown, unclear, missing      |
+| **Citation**          | A reference to a source in the answer                               | `citation`, `citations`              | reference, source link         |
+| **Quality Rating**    | Assessment of source reliability (1-5 stars)                        | `qualityRating`                      | score, rating, grade           |
 
 ### Agent Roles
 
-| Term | Definition | Code Usage | UI Label |
-|------|------------|------------|----------|
-| **Research Planner** | Breaks down question into research areas | `ResearchPlanner`, `plannerAgent` | "Research Planner" |
-| **Source Hunter** | Finds sources for research | `SourceHunter`, `hunterAgent` | "Source Hunter" |
-| **Source Critic** | Evaluates source quality (The Rigorous Analyst) | `SourceCritic`, `criticAgent` | "Source Critic" |
-| **Synthesizer** | Creates balanced synthesis (The Balanced Synthesizer) | `Synthesizer`, `synthesizerAgent` | "Synthesizer" |
-| **Skeptic** | Challenges conclusions (The Challenger) | `Skeptic`, `skepticAgent` | "Skeptic" |
-| **Moderator** | Summarizes debate (The Judge) | `Moderator`, `moderatorAgent` | "Moderator" |
-| **Final Synthesizer** | Creates final answer | `FinalSynthesizer`, `finalSynthesizerAgent` | "Final Synthesizer" |
+| Term                  | Definition                                            | Code Usage                                  | UI Label            |
+| --------------------- | ----------------------------------------------------- | ------------------------------------------- | ------------------- |
+| **Research Planner**  | Breaks down question into research areas              | `ResearchPlanner`, `plannerAgent`           | "Research Planner"  |
+| **Source Hunter**     | Finds sources for research                            | `SourceHunter`, `hunterAgent`               | "Source Hunter"     |
+| **Source Critic**     | Evaluates source quality (The Rigorous Analyst)       | `SourceCritic`, `criticAgent`               | "Source Critic"     |
+| **Synthesizer**       | Creates balanced synthesis (The Balanced Synthesizer) | `Synthesizer`, `synthesizerAgent`           | "Synthesizer"       |
+| **Skeptic**           | Challenges conclusions (The Challenger)               | `Skeptic`, `skepticAgent`                   | "Skeptic"           |
+| **Moderator**         | Summarizes debate (The Judge)                         | `Moderator`, `moderatorAgent`               | "Moderator"         |
+| **Final Synthesizer** | Creates final answer                                  | `FinalSynthesizer`, `finalSynthesizerAgent` | "Final Synthesizer" |
 
 ### Debate Structure
 
-| Term | Definition | Code Usage | UI Label |
-|------|------------|------------|----------|
-| **Opening Statements** | Initial positions from all agents | `openingStatements`, `roundOpening` | "Opening Statements" |
-| **Cross-Examination** | Agents responding to each other | `crossExamination`, `roundCrossExam` | "Cross-Examination" |
-| **Rebuttal** | Agents defending/revising positions | `rebuttal`, `roundRebuttal` | "Rebuttal & Refinement" |
-| **Final Positions** | Concluding statements | `finalPositions`, `roundFinal` | "Final Positions" |
+| Term                   | Definition                          | Code Usage                           | UI Label                |
+| ---------------------- | ----------------------------------- | ------------------------------------ | ----------------------- |
+| **Opening Statements** | Initial positions from all agents   | `openingStatements`, `roundOpening`  | "Opening Statements"    |
+| **Cross-Examination**  | Agents responding to each other     | `crossExamination`, `roundCrossExam` | "Cross-Examination"     |
+| **Rebuttal**           | Agents defending/revising positions | `rebuttal`, `roundRebuttal`          | "Rebuttal & Refinement" |
+| **Final Positions**    | Concluding statements               | `finalPositions`, `roundFinal`       | "Final Positions"       |
 
 ---
 
@@ -71,6 +72,7 @@ Every domain concept has a single, well-defined term that is used consistently i
 ### Code (TypeScript)
 
 **Types/Interfaces:**
+
 ```typescript
 // ✅ Good - Uses domain terms
 interface ResearchSession {
@@ -86,7 +88,7 @@ interface Agent {
   messages: AgentMessage[];
 }
 
-type AgentRole = 
+type AgentRole =
   | "Research Planner"
   | "Source Hunter"
   | "Source Critic"
@@ -105,19 +107,21 @@ interface Query {
 ```
 
 **Functions:**
+
 ```typescript
 // ✅ Good
-function startResearch(question: string): Promise<ResearchSession>
-function runDebate(sources: Source[]): Promise<Debate>
-function synthesizeAnswer(debate: Debate): Answer
+function startResearch(question: string): Promise<ResearchSession>;
+function runDebate(sources: Source[]): Promise<Debate>;
+function synthesizeAnswer(debate: Debate): Answer;
 
 // ❌ Bad
-function processQuery(input: string): Promise<Query>
-function runDiscussion(refs: Reference[]): Promise<Discussion>
-function createSummary(chat: Chat): Summary
+function processQuery(input: string): Promise<Query>;
+function runDiscussion(refs: Reference[]): Promise<Discussion>;
+function createSummary(chat: Chat): Summary;
 ```
 
 **Variables:**
+
 ```typescript
 // ✅ Good
 const researchSession = await startResearch(question);
@@ -133,6 +137,7 @@ const response = chat.messages[0];
 ### UI Components
 
 **Component Names:**
+
 ```tsx
 // ✅ Good
 <ResearchInput />
@@ -150,6 +155,7 @@ const response = chat.messages[0];
 ```
 
 **UI Labels:**
+
 ```tsx
 // ✅ Good
 <h2>Research Timeline</h2>
@@ -247,7 +253,7 @@ Use types to enforce terms:
 
 ```typescript
 // ✅ Good - Type enforces term
-type AgentRole = typeof AGENT_ROLES[keyof typeof AGENT_ROLES];
+type AgentRole = (typeof AGENT_ROLES)[keyof typeof AGENT_ROLES];
 
 function createAgent(role: AgentRole): Agent {
   // TypeScript ensures only valid roles
@@ -268,6 +274,7 @@ npm run lint:ubiquitous-language
 ```
 
 This checks:
+
 - Code uses registered terms
 - UI labels match domain terms
 - API endpoints use correct terms
@@ -292,11 +299,13 @@ Automatically validates terms before commit.
 ### Example: Adding "Research Area"
 
 1. **Define:**
+
    ```
    Research Area: A specific topic or aspect of the research question
    ```
 
 2. **Add to registry:**
+
    ```typescript
    export const DOMAIN_TERMS = {
      // ...
@@ -305,18 +314,20 @@ Automatically validates terms before commit.
    ```
 
 3. **Create type:**
+
    ```typescript
    type ResearchArea = string; // Or more specific type
    ```
 
 4. **Use everywhere:**
+
    ```typescript
    // Code
    const researchAreas: ResearchArea[] = [...];
-   
+
    // UI
    <h3>Research Areas</h3>
-   
+
    // API
    interface ResearchPlan {
      researchAreas: ResearchArea[];
@@ -331,18 +342,18 @@ Automatically validates terms before commit.
 
 ```typescript
 // Mixing terms
-const query = await startResearch(question);  // ❌ "query" vs "research"
-const chat = runDebate(sources);              // ❌ "chat" vs "debate"
-const summary = synthesizeAnswer(debate);     // ❌ "summary" vs "synthesis"
+const query = await startResearch(question); // ❌ "query" vs "research"
+const chat = runDebate(sources); // ❌ "chat" vs "debate"
+const summary = synthesizeAnswer(debate); // ❌ "summary" vs "synthesis"
 
 // Generic terms
-interface Model { }                            // ❌ Should be "Agent"
-function process(input: string) { }            // ❌ Should be "startResearch"
-const response = await api.get('/query');      // ❌ Should be "/research"
+interface Model {} // ❌ Should be "Agent"
+function process(input: string) {} // ❌ Should be "startResearch"
+const response = await api.get("/query"); // ❌ Should be "/research"
 
 // Inconsistent casing
-const agentRole = "source-critic";            // ❌ Should be "Source Critic"
-const DEBATE_ROUND = 1;                       // ❌ Should be "debateRound"
+const agentRole = "source-critic"; // ❌ Should be "Source Critic"
+const DEBATE_ROUND = 1; // ❌ Should be "debateRound"
 ```
 
 ### ✅ Do This
@@ -354,9 +365,9 @@ const debate = runDebate(sources);
 const synthesis = synthesizeAnswer(debate);
 
 // Domain terms
-interface Agent { }
-function startResearch(question: string) { }
-const response = await api.get('/research');
+interface Agent {}
+function startResearch(question: string) {}
+const response = await api.get("/research");
 
 // Consistent casing
 const agentRole: AgentRole = AGENT_ROLES.SOURCE_CRITIC;
@@ -424,9 +435,11 @@ All documentation must use domain terms:
 
 ```markdown
 <!-- ✅ Good -->
+
 The Research Planner breaks down the user's question into research areas.
 
 <!-- ❌ Bad -->
+
 The query processor analyzes the input and creates topics.
 ```
 
@@ -443,7 +456,7 @@ describe("Research Session", () => {
     const session = startResearch("What is UBI?");
     expect(session.question).toBe("What is UBI?");
   });
-  
+
   it("should run debate between agents", () => {
     const debate = runDebate(sources);
     expect(debate.rounds).toHaveLength(4);
@@ -507,7 +520,7 @@ When reviewing PRs, check:
 ---
 
 **See also:**
+
 - [Domain Dictionary](#domain-dictionary) - Complete list of terms
 - [Naming Conventions](#naming-conventions) - How to use terms in code
 - [Validation Process](#validation-process) - How to validate usage
-

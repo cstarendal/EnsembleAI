@@ -252,37 +252,59 @@ const sanitized = sanitizeString(parsed.text);
 **Pre-push Hooks:**
 - Knip (unused exports check)
 
-### Daily Workflow
+### Pull Request Workflow (Everyone)
+
+**This project uses PR-based development for everyone, including the maintainer.** This creates a clear history, enables self-review, and helps learn best practices.
+
+**Standard Workflow:**
 
 1. **Pull latest changes:** `git pull origin main`
-2. **Start dev server:** `npm run dev` (frontend/backend)
-3. **Make changes** - Auto-reload on file changes
-4. **Run checks before committing:**
+2. **Create a feature branch:**
+   ```bash
+   git checkout -b feature/my-feature
+   # or: fix/bug-description, docs/update-readme, etc.
+   ```
+3. **Start dev server:** `npm run dev` (frontend/backend)
+4. **Make changes** - Auto-reload on file changes
+5. **Write tests first (TDD)** - Create tests before implementation
+6. **Run checks before committing:**
    ```bash
    npm run format:check
    npm run lint
    npm run typecheck
    npm test -- --run
    ```
-5. **Commit** - Pre-commit hooks run automatically
+7. **Commit changes** - Pre-commit hooks run automatically:
+   ```bash
+   git add .
+   git commit -m "feat: add new feature"
+   ```
+8. **Push branch and create PR:**
+   ```bash
+   git push origin feature/my-feature
+   ```
+   Then create a Pull Request on GitHub with:
+   - Clear description of changes
+   - Reference to related issues (if any)
+   - Checklist from PR template
+9. **Wait for CI to pass** - All automated checks must pass
+10. **Self-review the PR** - Review your own changes before merging
+11. **Merge when ready** - Use "Squash and merge" to keep history clean
 
-### Pull Request Workflow (Open Source)
+**Branch Naming:**
+- `feature/description` - New features
+- `fix/description` - Bug fixes
+- `docs/description` - Documentation updates
+- `refactor/description` - Code refactoring
+- `test/description` - Test improvements
 
-**For Contributors:**
-- Create feature branch from `main`
-- Make small, focused changes
-- Write tests first (TDD)
-- Ensure all checks pass locally
-- Create PR with clear description
-- Address review feedback
-
-**For Maintainers:**
-- Review PRs carefully
-- Ensure CI passes
-- Check bundle size impact
-- Verify design tokens used
-- Test manually if needed
-- Merge when ready
+**PR Best Practices:**
+- Keep PRs small and focused (< 300 lines changed preferred)
+- One feature/fix per PR
+- Write clear commit messages
+- Use the PR template checklist
+- Self-review before merging
+- Ensure all CI checks pass
 
 ## Common Mistakes to Avoid
 
@@ -305,7 +327,7 @@ const sanitized = sanitizeString(parsed.text);
 4. **Security First:** Validate and sanitize everything
 5. **Performance Conscious:** Monitor bundle size continuously
 6. **Test Coverage:** Critical files must meet thresholds
-7. **Code Review:** All PRs reviewed before merge
+7. **Code Review:** All PRs reviewed (self-review for maintainer, peer review for contributors) before merge
 8. **Documentation:** Keep docs up-to-date
 
 ## Ubiquitous Language

@@ -43,17 +43,20 @@ This system implements an ensemble strategy where different AI models with disti
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/YOUR_USERNAME/EnsembleAI.git
 cd EnsembleAI
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Set up environment variables:
+
 ```bash
 # Backend
 cp backend/.env.example backend/.env
@@ -65,11 +68,13 @@ cp frontend/.env.example frontend/.env
 ```
 
 4. Start development servers:
+
 ```bash
 npm run dev
 ```
 
 This will start:
+
 - Frontend on http://localhost:5173
 - Backend on http://localhost:3000
 
@@ -142,16 +147,21 @@ npm run format:check     # Check formatting
 
 ## Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! This project uses **PR-based development for everyone** (including the maintainer) to create clear history, enable self-review, and learn best practices.
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for complete guidelines.
 
 ### Quick Start for Contributors
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Make your changes following our [code standards](.cursorrules)
-4. Run checks: `npm run lint && npm run typecheck && npm test`
-5. Commit and push: `git push origin feature/my-feature`
-6. Create a Pull Request
+1. Fork the repository (for external contributors) or clone directly (for maintainer)
+2. Pull latest: `git pull origin main`
+3. Create a feature branch: `git checkout -b feature/my-feature`
+4. Make your changes following our [code standards](.cursorrules)
+5. Write tests first (TDD approach)
+6. Run checks: `npm run lint && npm run typecheck && npm test`
+7. Commit and push: `git push origin feature/my-feature`
+8. Create a Pull Request on GitHub
+9. Wait for CI to pass, then self-review and merge
 
 ## Documentation
 

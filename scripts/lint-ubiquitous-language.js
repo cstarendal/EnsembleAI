@@ -2,9 +2,9 @@
 
 /**
  * Ubiquitous Language Validation Script
- * 
+ *
  * Checks that code uses registered domain terms consistently.
- * 
+ *
  * Usage: npm run lint:ubiquitous-language
  */
 
@@ -20,8 +20,8 @@ const __dirname = dirname(__filename);
 const FORBIDDEN_TERMS = {
   // Generic terms that should use domain terms
   query: ["research", "question"],
-  "processQuery": ["startResearch"],
-  "runQuery": ["startResearch"],
+  processQuery: ["startResearch"],
+  runQuery: ["startResearch"],
   model: ["agent"],
   "AI model": ["agent"],
   chat: ["debate"],
@@ -94,11 +94,17 @@ function checkForbiddenTerms(content, filePath) {
 
       matches.forEach((match) => {
         // Skip if it's part of a domain term (e.g., "researchSession" contains "search")
-        const context = line.substring(Math.max(0, match.index - 20), match.index + match[0].length + 20);
+        const context = line.substring(
+          Math.max(0, match.index - 20),
+          match.index + match[0].length + 20
+        );
         if (context.match(/[a-zA-Z]/)) {
           // Might be part of a compound word, check more carefully
           const before = line.substring(Math.max(0, match.index - 1), match.index);
-          const after = line.substring(match.index + match[0].length, match.index + match[0].length + 1);
+          const after = line.substring(
+            match.index + match[0].length,
+            match.index + match[0].length + 1
+          );
           if (/[a-zA-Z]/.test(before) || /[a-zA-Z]/.test(after)) {
             return; // Part of compound word, skip
           }
@@ -133,10 +139,7 @@ function scanDirectory(dir, baseDir = dir) {
       }
     } else if (stat.isFile()) {
       const ext = extname(fullPath);
-      if (
-        [".ts", ".tsx", ".js", ".jsx"].includes(ext) &&
-        !shouldIgnoreFile(fullPath)
-      ) {
+      if ([".ts", ".tsx", ".js", ".jsx"].includes(ext) && !shouldIgnoreFile(fullPath)) {
         files.push(fullPath);
       }
     }
@@ -150,11 +153,8 @@ function main() {
 
   const frontendSrc = join(__dirname, "../frontend/src");
   const backendSrc = join(__dirname, "../backend/src");
-  
-  const allFiles = [
-    ...scanDirectory(frontendSrc),
-    ...scanDirectory(backendSrc),
-  ];
+
+  const allFiles = [...scanDirectory(frontendSrc), ...scanDirectory(backendSrc)];
 
   const allIssues = [];
 
@@ -207,4 +207,3 @@ function main() {
 }
 
 main();
-

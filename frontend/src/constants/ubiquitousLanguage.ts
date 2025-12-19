@@ -1,9 +1,9 @@
 /**
  * Ubiquitous Language Registry
- * 
+ *
  * All domain terms must be defined here and used consistently
  * across code, UI, documentation, and API.
- * 
+ *
  * See docs/UBIQUITOUS_LANGUAGE.md for usage guidelines.
  */
 
@@ -76,11 +76,11 @@ export const DEBATE_ROUND_TYPES = {
 } as const;
 
 // Type Definitions
-export type DomainTerm = typeof DOMAIN_TERMS[keyof typeof DOMAIN_TERMS];
-export type AgentRole = typeof AGENT_ROLES[keyof typeof AGENT_ROLES];
-export type DebateRound = typeof DEBATE_ROUNDS[keyof typeof DEBATE_ROUNDS];
-export type SessionStatus = typeof SESSION_STATUS[keyof typeof SESSION_STATUS];
-export type DebateRoundType = typeof DEBATE_ROUND_TYPES[keyof typeof DEBATE_ROUND_TYPES];
+export type DomainTerm = (typeof DOMAIN_TERMS)[keyof typeof DOMAIN_TERMS];
+export type AgentRole = (typeof AGENT_ROLES)[keyof typeof AGENT_ROLES];
+export type DebateRound = (typeof DEBATE_ROUNDS)[keyof typeof DEBATE_ROUNDS];
+export type SessionStatus = (typeof SESSION_STATUS)[keyof typeof SESSION_STATUS];
+export type DebateRoundType = (typeof DEBATE_ROUND_TYPES)[keyof typeof DEBATE_ROUND_TYPES];
 
 // Helper Functions
 export function isValidAgentRole(role: string): role is AgentRole {
@@ -118,4 +118,3 @@ export const SESSION_STATUS_LABELS: Record<SessionStatus, string> = {
   [SESSION_STATUS.COMPLETE]: "Complete",
   [SESSION_STATUS.ERROR]: "Error",
 };
-

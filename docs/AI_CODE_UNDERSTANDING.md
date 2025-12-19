@@ -14,13 +14,13 @@ When code uses mixed terminology, AI struggles:
 
 ```typescript
 // File 1: uses "query"
-function processQuery(input: string): Promise<Query> { }
+function processQuery(input: string): Promise<Query> {}
 
 // File 2: uses "research"
-function startResearch(question: string): Promise<ResearchSession> { }
+function startResearch(question: string): Promise<ResearchSession> {}
 
 // File 3: uses "analysis"
-function runAnalysis(prompt: string): Promise<AnalysisResult> { }
+function runAnalysis(prompt: string): Promise<AnalysisResult> {}
 
 // AI's confusion:
 // - Are these the same thing?
@@ -30,6 +30,7 @@ function runAnalysis(prompt: string): Promise<AnalysisResult> { }
 ```
 
 **Result:** AI can't reliably:
+
 - Find related code
 - Understand relationships
 - Suggest correct implementations
@@ -39,9 +40,9 @@ function runAnalysis(prompt: string): Promise<AnalysisResult> { }
 
 ```typescript
 // All files use "research"
-function startResearch(question: string): Promise<ResearchSession> { }
-function getResearchSession(id: string): ResearchSession { }
-function updateResearchStatus(session: ResearchSession): void { }
+function startResearch(question: string): Promise<ResearchSession> {}
+function getResearchSession(id: string): ResearchSession {}
+function updateResearchStatus(session: ResearchSession): void {}
 
 // AI's understanding:
 // - All related to "research"
@@ -51,6 +52,7 @@ function updateResearchStatus(session: ResearchSession): void { }
 ```
 
 **Result:** AI can:
+
 - ✅ Find all related code instantly
 - ✅ Understand relationships clearly
 - ✅ Suggest correct implementations
@@ -65,6 +67,7 @@ function updateResearchStatus(session: ResearchSession): void { }
 AI uses terminology for semantic code search:
 
 **Without UL:**
+
 ```
 User: "Find where we process queries"
 AI: Searches for: query, process, input, analysis, research...
@@ -73,6 +76,7 @@ AI: Searches for: query, process, input, analysis, research...
 ```
 
 **With UL:**
+
 ```
 User: "Find where we start research"
 AI: Searches for: research, startResearch, ResearchSession
@@ -85,6 +89,7 @@ AI: Searches for: research, startResearch, ResearchSession
 AI uses context from terminology:
 
 **Without UL:**
+
 ```typescript
 // AI sees mixed terms, unsure what to suggest
 function create(???) {
@@ -94,6 +99,7 @@ function create(???) {
 ```
 
 **With UL:**
+
 ```typescript
 // AI sees consistent "research" everywhere
 function create(???) {
@@ -107,6 +113,7 @@ function create(???) {
 AI needs consistent terms to refactor safely:
 
 **Without UL:**
+
 ```typescript
 // AI tries to rename "query" → "research"
 // But misses:
@@ -117,6 +124,7 @@ AI needs consistent terms to refactor safely:
 ```
 
 **With UL:**
+
 ```typescript
 // AI knows: everything is "research"
 // Rename "research" → "investigation"
@@ -129,6 +137,7 @@ AI needs consistent terms to refactor safely:
 AI infers relationships from terminology:
 
 **Without UL:**
+
 ```typescript
 // AI sees:
 processQuery() → Query
@@ -140,6 +149,7 @@ runAnalysis() → AnalysisResult
 ```
 
 **With UL:**
+
 ```typescript
 // AI sees:
 startResearch() → ResearchSession
@@ -159,25 +169,29 @@ updateResearchStatus() → ResearchSession
 **User asks AI:** "Where do we handle research sessions?"
 
 **Without UL:**
+
 ```typescript
 // AI searches for: research, query, analysis, session, job, task
 // Finds:
-- processQuery() in api.ts
-- startResearch() in orchestrator.ts
-- runAnalysis() in analysis.ts
-- createSession() in session.ts
-- handleJob() in job.ts
+(-processQuery()) in
+  api.ts - startResearch() in
+  orchestrator.ts - runAnalysis() in
+  analysis.ts - createSession() in
+  session.ts - handleJob() in
+  job.ts;
 
 // AI: "I found 5 different things, which one?"
 ```
 
 **With UL:**
+
 ```typescript
 // AI searches for: research, ResearchSession
 // Finds:
-- startResearch() in orchestrator.ts
-- getResearchSession() in api.ts
-- updateResearchStatus() in state.ts
+(-startResearch()) in
+  orchestrator.ts - getResearchSession() in
+  api.ts - updateResearchStatus() in
+  state.ts;
 
 // AI: "All 3 files handle ResearchSession, here's how they relate..."
 ```
@@ -187,16 +201,18 @@ updateResearchStatus() → ResearchSession
 **User asks AI:** "Create a function to get research status"
 
 **Without UL:**
+
 ```typescript
 // AI generates (uncertain):
-function getQueryStatus(id: string): string { }
-function getResearchState(session: string): string { }
-function getAnalysisStatus(query: string): string { }
+function getQueryStatus(id: string): string {}
+function getResearchState(session: string): string {}
+function getAnalysisStatus(query: string): string {}
 
 // AI: "I'm not sure which term to use..."
 ```
 
 **With UL:**
+
 ```typescript
 // AI generates (confident):
 function getResearchStatus(sessionId: string): SessionStatus {
@@ -210,6 +226,7 @@ function getResearchStatus(sessionId: string): SessionStatus {
 **User asks AI:** "How does research flow work?"
 
 **Without UL:**
+
 ```typescript
 // AI sees disconnected pieces:
 processQuery() → Query
@@ -220,6 +237,7 @@ createSummary() → Summary
 ```
 
 **With UL:**
+
 ```typescript
 // AI sees clear flow:
 startResearch() → ResearchSession
@@ -238,6 +256,7 @@ synthesizeAnswer() → Synthesis
 Consistent terms = better token usage:
 
 **Without UL:**
+
 ```
 AI needs to consider: query, research, analysis, investigation, study
 → 5 different terms to track
@@ -245,6 +264,7 @@ AI needs to consider: query, research, analysis, investigation, study
 ```
 
 **With UL:**
+
 ```
 AI only needs: research
 → 1 term to track
@@ -256,23 +276,25 @@ AI only needs: research
 AI recognizes patterns faster:
 
 **Without UL:**
+
 ```typescript
 // AI sees inconsistent patterns:
-processQuery()
-handleInput()
-runAnalysis()
-startResearch()
+processQuery();
+handleInput();
+runAnalysis();
+startResearch();
 
 // AI: "These might be related... or not?"
 ```
 
 **With UL:**
+
 ```typescript
 // AI sees clear pattern:
-startResearch()
-getResearchSession()
-updateResearchStatus()
-completeResearch()
+startResearch();
+getResearchSession();
+updateResearchStatus();
+completeResearch();
 
 // AI: "Clear pattern: all about research"
 ```
@@ -282,6 +304,7 @@ completeResearch()
 Consistent terms = better context understanding:
 
 **Without UL:**
+
 ```
 AI reads 1000 lines with mixed terms:
 - 200 lines use "query"
@@ -295,6 +318,7 @@ AI: "I need to track 4 different concepts"
 ```
 
 **With UL:**
+
 ```
 AI reads 1000 lines with consistent terms:
 - 1000 lines use "research"
@@ -311,6 +335,7 @@ AI: "One clear concept"
 ### What AI Can Do Better With UL
 
 #### 1. **Find All Usages**
+
 ```
 User: "Find all places we use research sessions"
 
@@ -326,6 +351,7 @@ Without UL:
 ```
 
 #### 2. **Understand Dependencies**
+
 ```
 User: "What depends on ResearchSession?"
 
@@ -341,6 +367,7 @@ Without UL:
 ```
 
 #### 3. **Suggest Implementations**
+
 ```
 User: "How should I implement research status?"
 
@@ -356,6 +383,7 @@ Without UL:
 ```
 
 #### 4. **Refactor Safely**
+
 ```
 User: "Rename research to investigation"
 
@@ -409,6 +437,7 @@ Result: AI understands the system correctly
 ### Test: Ask AI to Explain System
 
 **Without UL:**
+
 ```
 User: "Explain how the research system works"
 
@@ -422,6 +451,7 @@ I'm not entirely sure how these relate..."
 ```
 
 **With UL:**
+
 ```
 User: "Explain how the research system works"
 
@@ -459,6 +489,7 @@ function startResearch(question: string): Promise<ResearchSession> {
 ```
 
 **Result:** AI has:
+
 - ✅ Clear domain understanding
 - ✅ Type-safe navigation
 - ✅ Pattern recognition
@@ -470,20 +501,20 @@ function startResearch(question: string): Promise<ResearchSession> {
 
 ### Code Navigation Speed
 
-| Task | Without UL | With UL | Improvement |
-|------|------------|---------|-------------|
-| Find all usages | 10-15s | 2-3s | **5x faster** |
-| Understand flow | 30-60s | 5-10s | **6x faster** |
+| Task                   | Without UL   | With UL      | Improvement    |
+| ---------------------- | ------------ | ------------ | -------------- |
+| Find all usages        | 10-15s       | 2-3s         | **5x faster**  |
+| Understand flow        | 30-60s       | 5-10s        | **6x faster**  |
 | Suggest implementation | 50% accuracy | 90% accuracy | **80% better** |
-| Refactor safely | 60% complete | 95% complete | **58% better** |
+| Refactor safely        | 60% complete | 95% complete | **58% better** |
 
 ### Code Comprehension
 
-| Aspect | Without UL | With UL | Improvement |
-|--------|------------|---------|-------------|
-| Correct understanding | 60% | 95% | **58% better** |
-| Relationship mapping | 40% | 90% | **125% better** |
-| Pattern recognition | 50% | 95% | **90% better** |
+| Aspect                | Without UL | With UL | Improvement     |
+| --------------------- | ---------- | ------- | --------------- |
+| Correct understanding | 60%        | 95%     | **58% better**  |
+| Relationship mapping  | 40%        | 90%     | **125% better** |
+| Pattern recognition   | 50%        | 95%     | **90% better**  |
 
 ---
 
@@ -493,7 +524,7 @@ function startResearch(question: string): Promise<ResearchSession> {
 
 ```typescript
 // ✅ Good - Types guide AI
-import { type ResearchSession, type AgentRole } from '@/constants/ubiquitousLanguage';
+import { type ResearchSession, type AgentRole } from "@/constants/ubiquitousLanguage";
 
 function startResearch(question: string): Promise<ResearchSession> {
   // AI sees types, understands domain
@@ -504,7 +535,7 @@ function startResearch(question: string): Promise<ResearchSession> {
 
 ```typescript
 // ✅ Good - Constants guide AI
-import { AGENT_ROLES, SESSION_STATUS } from '@/constants/ubiquitousLanguage';
+import { AGENT_ROLES, SESSION_STATUS } from "@/constants/ubiquitousLanguage";
 
 const role: AgentRole = AGENT_ROLES.RESEARCH_PLANNER;
 // AI sees: "Oh, this is the domain term"
@@ -514,9 +545,9 @@ const role: AgentRole = AGENT_ROLES.RESEARCH_PLANNER;
 
 ```typescript
 // ✅ Good - Consistent naming
-function startResearch()
-function getResearchSession()
-function updateResearchStatus()
+function startResearch();
+function getResearchSession();
+function updateResearchStatus();
 
 // AI: "All about research, clear pattern"
 ```
@@ -530,7 +561,7 @@ function updateResearchStatus()
  * Creates agents and begins the research process.
  * Returns a ResearchSession with the session ID.
  */
-function startResearch(question: string): Promise<ResearchSession>
+function startResearch(question: string): Promise<ResearchSession>;
 ```
 
 ---
@@ -553,6 +584,7 @@ function startResearch(question: string): Promise<ResearchSession>
 **Consistent terminology = Clear mental model for AI**
 
 When AI sees:
+
 - `research` everywhere → understands: "This is about research"
 - `agent` everywhere → understands: "This is about agents"
 - `debate` everywhere → understands: "This is about debate"
@@ -564,6 +596,7 @@ AI builds a clear, accurate mental model of your system.
 **Ubiquitous Language doesn't just help humans - it's a superpower for AI code understanding.**
 
 The same consistency that helps developers also helps AI:
+
 - Navigate codebases
 - Understand relationships
 - Generate correct code
@@ -583,4 +616,3 @@ The same consistency that helps developers also helps AI:
 5. **Validate AI code** - Ensure it uses correct terms
 
 **Remember:** Every time you use a domain term, you're teaching AI about your system.
-
