@@ -35,7 +35,7 @@ function ResearchQuestionForm({ onSubmit }: ResearchQuestionFormProps): JSX.Elem
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/sessions", {
+      const result = await fetch("/api/sessions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -43,11 +43,11 @@ function ResearchQuestionForm({ onSubmit }: ResearchQuestionFormProps): JSX.Elem
         body: JSON.stringify({ question: question.trim() }),
       });
 
-      if (!response.ok) {
+      if (!result.ok) {
         throw new Error("Failed to start research session");
       }
 
-      const data = await response.json();
+      const data = await result.json();
       if (onSubmit) {
         onSubmit(data.sessionId);
       }

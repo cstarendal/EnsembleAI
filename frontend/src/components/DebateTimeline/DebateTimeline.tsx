@@ -30,8 +30,8 @@ function DebateTimeline({ session }: DebateTimelineProps): JSX.Element {
           <p className="text-sm text-muted-foreground">{session.plan.plan}</p>
           {session.plan.searchQueries.length > 0 && (
             <ul className="mt-sm list-disc list-inside text-sm text-muted-foreground">
-              {session.plan.searchQueries.map((query, idx) => (
-                <li key={idx}>{query}</li>
+              {session.plan.searchQueries.map((searchText, idx) => (
+                <li key={idx}>{searchText}</li>
               ))}
             </ul>
           )}

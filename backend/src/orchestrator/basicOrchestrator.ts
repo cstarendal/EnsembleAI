@@ -61,7 +61,7 @@ export async function runBasicOrchestration(
     const session3 = updateSessionStatus(session2, SESSION_STATUS.DEBATING, onEvent);
     const answer = await executeSynthesisPhase(session3.question, plan, sources, onEvent);
 
-    const finalSession = {
+    const finalSession: Session = {
       ...session3,
       plan,
       sources,
@@ -77,6 +77,7 @@ export async function runBasicOrchestration(
       type: "error",
       data: { error: error instanceof Error ? error.message : "Unknown error" },
     });
+
     return { ...currentSession, status: SESSION_STATUS.ERROR };
   }
 }
@@ -86,28 +87,28 @@ async function createResearchPlan(question: string): Promise<ResearchPlan> {
     {
       role: "system" as const,
       content:
-        "You are a Research Planner. Break down research questions into a structured plan with specific search queries.",
+        "You are a Research Planner. Break down research questions into a structured plan with specific search texts.",
     },
     {
       role: "user" as const,
-      content: `Create a research plan for: ${question}\n\nProvide:\n1. A structured plan (2-3 sentences)\n2. 3-5 specific search queries (one per line, prefixed with "- ")`,
+      content: `Create a research plan for: ${question}\n\nProvide:\n1. A structured plan (2-3 sentences)\n2. 3-5 specific search texts (one per line, prefixed with "- " )`,
     },
   ];
 
-  const response = await callAgent(AGENT_ROLES.RESEARCH_PLANNER, messages);
-  const lines = response.split("\n").filter((line) => line.trim());
+  const plannerMessage = await callAgent(AGENT_ROLES.RESEARCH_PLANNER, messages);
+  const lines = plannerMessage.split("\n").filter((line) => line.trim());
   const planText = lines
     .filter((line) => !line.startsWith("-"))
     .join(" ")
     .trim();
-  const queries = lines
+  const searchTexts = lines
     .filter((line) => line.startsWith("-"))
     .map((line) => line.replace(/^-\s*/, "").trim())
-    .filter((q) => q.length > 0);
+    .filter((text) => text.length > 0);
 
   return {
-    plan: planText || response.substring(0, 200),
-    searchQueries: queries.length > 0 ? queries : [question],
+    plan: planText || plannerMessage.substring(0, 200),
+    searchQueries: searchTexts.length > 0 ? searchTexts : [question],
   };
 }
 
@@ -120,27 +121,27 @@ async function findSources(plan: ResearchPlan): Promise<Source[]> {
     },
     {
       role: "user" as const,
-      content: `Find sources for these search queries:\n${plan.searchQueries
-        .map((q) => `- ${q}`)
+      content: `Find sources for these search texts:\n${plan.searchQueries
+        .map((text) => `- ${text}`)
         .join("\n")}\n\nReturn JSON array: [{"title": "...", "url": "...", "snippet": "..."}]`,
     },
   ];
 
-  const response = await callAgent(AGENT_ROLES.SOURCE_HUNTER_A, messages);
+  const hunterMessage = await callAgent(AGENT_ROLES.SOURCE_HUNTER_A, messages);
   try {
-    const jsonMatch = response.match(/\[[\s\S]*\]/);
+    const jsonMatch = hunterMessage.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]) as Source[];
       return parsed.slice(0, 6);
     }
   } catch {
-    // Fallback: create mock sources from response
+    // Fall back to placeholders
   }
 
-  return plan.searchQueries.slice(0, 4).map((query, idx) => ({
-    title: `Source for: ${query}`,
+  return plan.searchQueries.slice(0, 4).map((text, idx) => ({
+    title: `Source for: ${text}`,
     url: `https://example.com/source-${idx + 1}`,
-    snippet: `Relevant information about ${query}`,
+    snippet: `Relevant information about ${text}`,
   }));
 }
 

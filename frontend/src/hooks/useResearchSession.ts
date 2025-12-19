@@ -11,11 +11,11 @@ export function useResearchSession(sessionId: string | null): {
   const [error, setError] = useState<string | null>(null);
 
   const fetchSession = useCallback(async (id: string): Promise<Session> => {
-    const response = await fetch(`/api/sessions/${id}`);
-    if (!response.ok) {
+    const result = await fetch(`/api/sessions/${id}`);
+    if (!result.ok) {
       throw new Error("Failed to fetch session");
     }
-    return response.json();
+    return result.json();
   }, []);
 
   useEffect(() => {
