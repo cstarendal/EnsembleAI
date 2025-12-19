@@ -43,17 +43,20 @@ This system implements an ensemble strategy where different AI models with disti
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/YOUR_USERNAME/EnsembleAI.git
 cd EnsembleAI
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Set up environment variables:
+
 ```bash
 # Backend
 cp backend/.env.example backend/.env
@@ -65,11 +68,13 @@ cp frontend/.env.example frontend/.env
 ```
 
 4. Start development servers:
+
 ```bash
 npm run dev
 ```
 
 This will start:
+
 - Frontend on http://localhost:5173
 - Backend on http://localhost:3000
 

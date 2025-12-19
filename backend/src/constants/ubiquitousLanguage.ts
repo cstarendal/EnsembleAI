@@ -1,9 +1,9 @@
 /**
  * Ubiquitous Language Registry (Backend)
- * 
+ *
  * All domain terms must be defined here and used consistently
  * across code, API, documentation, and responses.
- * 
+ *
  * See docs/UBIQUITOUS_LANGUAGE.md for usage guidelines.
  */
 
@@ -68,10 +68,10 @@ export const DEBATE_ROUND_TYPES = {
 } as const;
 
 // Type Definitions
-export type DomainTerm = typeof DOMAIN_TERMS[keyof typeof DOMAIN_TERMS];
-export type AgentRole = typeof AGENT_ROLES[keyof typeof AGENT_ROLES];
-export type SessionStatus = typeof SESSION_STATUS[keyof typeof SESSION_STATUS];
-export type DebateRoundType = typeof DEBATE_ROUND_TYPES[keyof typeof DEBATE_ROUND_TYPES];
+export type DomainTerm = (typeof DOMAIN_TERMS)[keyof typeof DOMAIN_TERMS];
+export type AgentRole = (typeof AGENT_ROLES)[keyof typeof AGENT_ROLES];
+export type SessionStatus = (typeof SESSION_STATUS)[keyof typeof SESSION_STATUS];
+export type DebateRoundType = (typeof DEBATE_ROUND_TYPES)[keyof typeof DEBATE_ROUND_TYPES];
 
 // Helper Functions
 export function isValidAgentRole(role: string): role is AgentRole {
@@ -81,4 +81,3 @@ export function isValidAgentRole(role: string): role is AgentRole {
 export function isValidSessionStatus(status: string): status is SessionStatus {
   return Object.values(SESSION_STATUS).includes(status as SessionStatus);
 }
-

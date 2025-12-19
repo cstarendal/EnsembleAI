@@ -3,9 +3,11 @@
 ## 1. Overview and Goals
 
 ### 1.1 Purpose
+
 A system where multiple AI models collaborate in a visible debate to produce high-quality research answers on social policy questions. Users see the entire debate in real-time.
 
 ### 1.2 Requirements
+
 - **Quality**: Better than single-shot answers through debate and cross-examination
 - **Transparency**: Visible debate between agents with different agendas
 - **Speed**: 30-90 seconds per question
@@ -14,6 +16,7 @@ A system where multiple AI models collaborate in a visible debate to produce hig
 - **Topic**: Social policy questions (policy, economics, social issues)
 
 ### 1.3 Stakeholders
+
 - **Users**: Researchers, journalists, policy analysts, general public
 - **Developers**: Backend/frontend team
 - **Operators**: System administrators
@@ -54,20 +57,21 @@ A system where multiple AI models collaborate in a visible debate to produce hig
 
 ### 3.1 Agent Roles with Agendas
 
-| Role | Model | Agenda | Angle | Tone |
-|------|-------|--------|-------|------|
-| **Research Planner** | GPT-4o-mini | Break down question, create search plan | Structured planning | Neutral, analytical |
-| **Source Hunter A** | GPT-4o | Find academic/policy sources | Academic rigor | Fact-based |
-| **Source Hunter B** | Claude 3.5 Sonnet | Find sources from different perspective | Diverse search | Balanced |
-| **Source Critic** | Mistral Large | "The Rigorous Analyst" | Methodology, source quality, bias | Analytical, demanding |
-| **Synthesizer** | GPT-4o | "The Balanced Synthesizer" | Find consensus, balance perspectives | Balanced, inclusive |
-| **Skeptic** | Gemini 1.5 Pro | "The Challenger" | Question assumptions, find gaps | Challenging, critical |
-| **Moderator** | Claude 3.5 Sonnet | "The Judge" | Summarize debate, find consensus | Neutral, judging |
-| **Final Synthesizer** | GPT-4o | Final synthesis | Combine all perspectives | Balanced, definitive |
+| Role                  | Model             | Agenda                                  | Angle                                | Tone                  |
+| --------------------- | ----------------- | --------------------------------------- | ------------------------------------ | --------------------- |
+| **Research Planner**  | GPT-4o-mini       | Break down question, create search plan | Structured planning                  | Neutral, analytical   |
+| **Source Hunter A**   | GPT-4o            | Find academic/policy sources            | Academic rigor                       | Fact-based            |
+| **Source Hunter B**   | Claude 3.5 Sonnet | Find sources from different perspective | Diverse search                       | Balanced              |
+| **Source Critic**     | Mistral Large     | "The Rigorous Analyst"                  | Methodology, source quality, bias    | Analytical, demanding |
+| **Synthesizer**       | GPT-4o            | "The Balanced Synthesizer"              | Find consensus, balance perspectives | Balanced, inclusive   |
+| **Skeptic**           | Gemini 1.5 Pro    | "The Challenger"                        | Question assumptions, find gaps      | Challenging, critical |
+| **Moderator**         | Claude 3.5 Sonnet | "The Judge"                             | Summarize debate, find consensus     | Neutral, judging      |
+| **Final Synthesizer** | GPT-4o            | Final synthesis                         | Combine all perspectives             | Balanced, definitive  |
 
 ### 3.2 Debate Flow (Updated)
 
 **Round 0: Planning (~10s)**
+
 ```
 User Question
     ↓
@@ -75,6 +79,7 @@ Research Planner → Research Plan
 ```
 
 **Round 1: Source Gathering (parallel, ~15s)**
+
 ```
 Research Plan
     ↓
@@ -83,6 +88,7 @@ Source Hunter B → Sources B (4-6)
 ```
 
 **Round 2: Source Critique (~15s)**
+
 ```
 Sources A + B
     ↓
@@ -92,6 +98,7 @@ Source Critic → Quality ratings + Claims
 **Rounds 3-6: DEBATE (new structure)**
 
 **Round 3: Opening Statements (parallel, ~15s)**
+
 ```
 Sources + Critique
     ↓
@@ -101,6 +108,7 @@ Skeptic → Opening: "I'm skeptical of 2 conclusions..."
 ```
 
 **Round 4: Cross-Examination (sequential, ~20s)**
+
 ```
 Each model sees others' openings and responds:
     ↓
@@ -110,6 +118,7 @@ Skeptic → Critic: "Your critique is valid, but you miss that..."
 ```
 
 **Round 5: Rebuttal & Refinement (sequential, ~20s)**
+
 ```
 Each model defends/revises based on cross-examination:
     ↓
@@ -119,6 +128,7 @@ Skeptic → "Critic convinced me on methodology, but still concerned about..."
 ```
 
 **Round 6: Final Positions (parallel, ~15s)**
+
 ```
 Each model gives final position:
     ↓
@@ -128,6 +138,7 @@ Skeptic → Final position + what changed
 ```
 
 **Round 7: Moderation (~10s)**
+
 ```
 All debate messages
     ↓
@@ -135,6 +146,7 @@ Moderator → Synthesis of debate + consensus points + remaining disagreements
 ```
 
 **Round 8: Final Answer (~15s)**
+
 ```
 Moderator synthesis + All sources
     ↓
@@ -146,6 +158,7 @@ Final Synthesizer → Final answer with citations + uncertainties
 ### 3.3 State Management
 
 Each debate message contains:
+
 - `agent_id`: Unique ID
 - `role`: Role name
 - `model`: Model used
@@ -166,6 +179,7 @@ Each debate message contains:
 Starts a new research session.
 
 Request:
+
 ```json
 {
   "question": "What are the effects of universal basic income on employment rates?",
@@ -178,6 +192,7 @@ Request:
 ```
 
 Response:
+
 ```json
 {
   "session_id": "abc123",
@@ -190,6 +205,7 @@ Response:
 SSE stream for real-time updates.
 
 Event format for debate:
+
 ```json
 {
   "type": "debate_message",
@@ -207,6 +223,7 @@ Event format for debate:
 ```
 
 Event types:
+
 - `planning_complete`: Planning done
 - `sources_found`: Sources found
 - `critique_complete`: Source critique done
@@ -222,6 +239,7 @@ Event types:
 Gets current status.
 
 Response:
+
 ```json
 {
   "session_id": "abc123",
@@ -239,6 +257,7 @@ Response:
 Gets final result.
 
 Response:
+
 ```json
 {
   "session_id": "abc123",
@@ -290,6 +309,7 @@ Output format (JSON):
 ### 5.2 Source Hunter Prompts
 
 **Hunter A:**
+
 ```
 You are a source hunter for social policy research.
 
@@ -325,6 +345,7 @@ Output format (JSON):
 ```
 
 **Hunter B:**
+
 ```
 You are a source hunter for social policy research.
 
@@ -403,6 +424,7 @@ Output format (JSON):
 ### 5.4 Debate: Opening Statement Prompts
 
 **Critic Opening Statement:**
+
 ```
 You are "The Rigorous Analyst" in a debate about research quality and synthesis.
 
@@ -426,6 +448,7 @@ Be direct and rigorous. Don't be afraid to challenge weak claims.
 ```
 
 **Synthesizer Opening Statement:**
+
 ```
 You are "The Balanced Synthesizer" in a debate about research synthesis.
 
@@ -449,6 +472,7 @@ Be comprehensive but balanced. Include multiple perspectives.
 ```
 
 **Skeptic Opening Statement:**
+
 ```
 You are "The Challenger" in a debate about research conclusions.
 
@@ -673,6 +697,7 @@ Output format (JSON):
 ### 6.1 Layout
 
 The UI shows:
+
 - Research timeline (planning, hunting, critique)
 - **Debate section** with rounds and messages
 - Source panel
@@ -681,6 +706,7 @@ The UI shows:
 ### 6.2 Components (Updated)
 
 **DebateTimeline**
+
 - Shows debate round by round
 - Expand/collapse per round
 - Color coding per role
@@ -688,6 +714,7 @@ The UI shows:
 - Highlights consensus vs disagreements
 
 **DebateMessage**
+
 - Shows agent icon, role, model
 - Shows "→ [target]" for directed messages
 - Expand/collapse for long messages
@@ -695,12 +722,14 @@ The UI shows:
 - Highlights position (challenging/supporting/neutral)
 
 **ModerationSummary**
+
 - Shows consensus points
 - Shows disagreements
 - Shows unique contributions
 - Highlights unresolved issues
 
 **AnswerPanel**
+
 - Markdown rendering
 - Citations with hover
 - "Debate-informed" badge
@@ -730,6 +759,7 @@ The UI shows:
 ### 7.1 Tech Stack
 
 **Frontend:**
+
 - React 18+
 - Vite (build tool)
 - Zustand (state management)
@@ -738,6 +768,7 @@ The UI shows:
 - EventSource API (SSE client)
 
 **Backend:**
+
 - Node.js 20+
 - Express.js
 - axios (HTTP client)
@@ -745,6 +776,7 @@ The UI shows:
 - cors (CORS handling)
 
 **Infrastructure:**
+
 - Development: Local (localhost)
 - Production: Railway/Render/Fly.io
 - Environment variables: .env file
@@ -806,52 +838,54 @@ research-ensemble/
 ### 7.3 Key Implementation Details (Updated)
 
 **Debate Orchestrator:**
+
 ```javascript
 async function runDebate(sources, critique, question, streamCallback) {
   const debateState = {
     round: 3,
     messages: [],
-    participants: ['critic', 'synthesizer', 'skeptic']
+    participants: ["critic", "synthesizer", "skeptic"],
   };
-  
+
   // Round 3: Opening statements (parallel)
   const openings = await Promise.all([
-    callAgent('critic', getOpeningPrompt('critic', sources, critique, question)),
-    callAgent('synthesizer', getOpeningPrompt('synthesizer', sources, critique, question)),
-    callAgent('skeptic', getOpeningPrompt('skeptic', sources, critique, question))
+    callAgent("critic", getOpeningPrompt("critic", sources, critique, question)),
+    callAgent("synthesizer", getOpeningPrompt("synthesizer", sources, critique, question)),
+    callAgent("skeptic", getOpeningPrompt("skeptic", sources, critique, question)),
   ]);
-  
+
   openings.forEach((msg, i) => {
     msg.round = 3;
-    msg.target = 'all';
+    msg.target = "all";
     debateState.messages.push(msg);
-    streamCallback('debate_message', msg);
+    streamCallback("debate_message", msg);
   });
-  
+
   // Round 4: Cross-examination (sequential)
   for (const participant of debateState.participants) {
-    const others = debateState.messages.filter(m => m.agent !== participant);
+    const others = debateState.messages.filter((m) => m.agent !== participant);
     const response = await callAgent(
       participant,
       getCrossExaminationPrompt(participant, others, sources, question)
     );
     response.round = 4;
-    response.target = 'multiple'; // or specific targets
+    response.target = "multiple"; // or specific targets
     debateState.messages.push(response);
-    streamCallback('debate_message', response);
+    streamCallback("debate_message", response);
   }
-  
+
   // Round 5: Rebuttal (sequential)
   // Similar pattern...
-  
+
   // Round 6: Final positions (parallel)
   // Similar pattern...
-  
+
   return debateState;
 }
 ```
 
 **State Management:**
+
 - Each debate message saved with metadata
 - Debate state separate from research state
 - Timeline can be reconstructed from state
@@ -995,20 +1029,20 @@ async function runDebate(sources, critique, question, streamCallback) {
 
 ### 11.1 Technical Risks
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|------------|
-| API rate limits | Medium | High | Rate limiting, queue system |
-| Debate takes too long | Medium | Medium | Timeout per round, max 4 rounds |
-| Cost over budget | Medium | Medium | Cost tracking, budget limits |
-| Debate becomes circular | Low | Medium | Max 4 rounds, moderator stops |
+| Risk                    | Probability | Impact | Mitigation                      |
+| ----------------------- | ----------- | ------ | ------------------------------- |
+| API rate limits         | Medium      | High   | Rate limiting, queue system     |
+| Debate takes too long   | Medium      | Medium | Timeout per round, max 4 rounds |
+| Cost over budget        | Medium      | Medium | Cost tracking, budget limits    |
+| Debate becomes circular | Low         | Medium | Max 4 rounds, moderator stops   |
 
 ### 11.2 Quality Risks
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|------------|
-| Models echo each other | Medium | Medium | Different agendas, different models |
-| Debate becomes unproductive | Low | Medium | Moderator guides, max rounds |
-| Final answer too cautious | Medium | Low | Final synthesizer makes decisions |
+| Risk                        | Probability | Impact | Mitigation                          |
+| --------------------------- | ----------- | ------ | ----------------------------------- |
+| Models echo each other      | Medium      | Medium | Different agendas, different models |
+| Debate becomes unproductive | Low         | Medium | Moderator guides, max rounds        |
+| Final answer too cautious   | Medium      | Low    | Final synthesizer makes decisions   |
 
 ---
 
@@ -1053,14 +1087,14 @@ async function runDebate(sources, critique, question, streamCallback) {
 
 ```javascript
 const MODELS = {
-  planner: 'openai/gpt-4o-mini',
-  hunterA: 'openai/gpt-4o',
-  hunterB: 'anthropic/claude-3.5-sonnet',
-  critic: 'mistralai/mistral-large',
-  synthesizer: 'openai/gpt-4o',
-  skeptic: 'google/gemini-pro-1.5',
-  moderator: 'anthropic/claude-3.5-sonnet',
-  finalSynthesizer: 'openai/gpt-4o'
+  planner: "openai/gpt-4o-mini",
+  hunterA: "openai/gpt-4o",
+  hunterB: "anthropic/claude-3.5-sonnet",
+  critic: "mistralai/mistral-large",
+  synthesizer: "openai/gpt-4o",
+  skeptic: "google/gemini-pro-1.5",
+  moderator: "anthropic/claude-3.5-sonnet",
+  finalSynthesizer: "openai/gpt-4o",
 };
 ```
 
@@ -1079,12 +1113,14 @@ VITE_API_URL=http://localhost:3000
 ### 14.3 Dependencies
 
 **Backend:**
+
 - express: ^4.18.2
 - axios: ^1.6.0
 - cors: ^2.8.5
 - dotenv: ^16.3.1
 
 **Frontend:**
+
 - react: ^18.2.0
 - react-dom: ^18.2.0
 - zustand: ^4.4.0
@@ -1105,10 +1141,10 @@ VITE_API_URL=http://localhost:3000
 **Status**: Updated - Ready for Implementation
 
 **Key Changes from v1.0:**
+
 - Mistral Large for Source Critic
 - Debate structure instead of sequential process
 - Visible debate with different agendas
 - Moderator to summarize debate
 - Updated prompts for debate rounds
 - Updated UI for debate visualization
-

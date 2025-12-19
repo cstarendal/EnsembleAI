@@ -37,14 +37,16 @@ This project adheres to a code of conduct that all contributors are expected to 
    npm install
    ```
 4. Set up environment variables:
+
    ```bash
    # Backend
    cp backend/.env.example backend/.env
    # Add your OPENROUTER_API_KEY
-   
+
    # Frontend
    cp frontend/.env.example frontend/.env
    ```
+
 5. Start development servers:
    ```bash
    npm run dev
@@ -66,11 +68,13 @@ This project adheres to a code of conduct that all contributors are expected to 
 ### Workflow Steps
 
 1. **Pull latest changes:**
+
    ```bash
    git pull origin main
    ```
 
 2. **Create a branch** from `main`:
+
    ```bash
    git checkout -b feature/my-feature
    ```
@@ -80,6 +84,7 @@ This project adheres to a code of conduct that all contributors are expected to 
 4. **Write tests first (TDD)** - Create tests before implementation
 
 5. **Run checks locally** before committing:
+
    ```bash
    npm run format:check
    npm run lint
@@ -88,12 +93,14 @@ This project adheres to a code of conduct that all contributors are expected to 
    ```
 
 6. **Commit changes** (pre-commit hooks will run automatically):
+
    ```bash
    git add .
    git commit -m "feat: add new feature"
    ```
 
 7. **Push branch:**
+
    ```bash
    git push origin feature/my-feature
    ```
@@ -123,6 +130,7 @@ This project adheres to a code of conduct that all contributors are expected to 
 - **Validate before commit:** `npm run lint:ubiquitous-language`
 
 **Key Terms:**
+
 - Use `Research` (not "query", "analysis")
 - Use `Agent` (not "model", "AI")
 - Use `Debate` (not "chat", "discussion")
@@ -234,21 +242,25 @@ npm run test:frontend -- --coverage
 
 ```markdown
 ## Description
+
 Brief description of changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 ## Testing
+
 - [ ] Unit tests added/updated
 - [ ] Component tests added/updated
 - [ ] E2E tests added/updated (if applicable)
 - [ ] Tested manually
 
 ## Checklist
+
 - [ ] Code follows project standards
 - [ ] Self-review completed
 - [ ] Comments added for complex code
@@ -320,4 +332,3 @@ By contributing, you agree that your contributions will be licensed under the MI
 ---
 
 Thank you for contributing to Ensemble AI! 🎉
-
