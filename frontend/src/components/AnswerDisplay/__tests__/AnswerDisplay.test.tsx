@@ -6,7 +6,7 @@ describe("AnswerDisplay", () => {
   it("renders placeholder when no answer", () => {
     render(<AnswerDisplay answer={null} />);
     expect(
-      screen.getByText(/answer will appear here when research is complete/i),
+      screen.getByText(/answer will appear here when research is complete/i)
     ).toBeInTheDocument();
   });
 
@@ -14,9 +14,7 @@ describe("AnswerDisplay", () => {
     const answer = "This is the research answer.";
     render(<AnswerDisplay answer={answer} />);
 
-    expect(
-      screen.getByRole("heading", { name: "Research Answer" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Research Answer" })).toBeInTheDocument();
     expect(screen.getByText(answer)).toBeInTheDocument();
   });
 });

@@ -14,9 +14,7 @@ describe("ResearchQuestionForm", () => {
   it("renders form with question input and submit button", () => {
     render(<ResearchQuestionForm />);
     expect(screen.getByLabelText(/research question/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /start research/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /start research/i })).toBeInTheDocument();
   });
 
   it("validates question is required", async () => {
@@ -39,9 +37,7 @@ describe("ResearchQuestionForm", () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/question must be at least 10 characters/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/question must be at least 10 characters/i)).toBeInTheDocument();
     });
   });
 
@@ -55,9 +51,7 @@ describe("ResearchQuestionForm", () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/question must be at most 1000 characters/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/question must be at most 1000 characters/i)).toBeInTheDocument();
     });
   });
 
@@ -82,7 +76,7 @@ describe("ResearchQuestionForm", () => {
           method: "POST",
           headers: expect.objectContaining({ "Content-Type": "application/json" }),
           body: JSON.stringify({ question }),
-        }),
+        })
       );
     });
   });
@@ -104,9 +98,7 @@ describe("ResearchQuestionForm", () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/failed to start research session/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/failed to start research session/i)).toBeInTheDocument();
     });
   });
 
