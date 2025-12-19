@@ -1,0 +1,340 @@
+# Ensemble AI Research System - Cursor Rules
+
+This project follows strict architecture, code quality, and development patterns learned from previous projects. All code must adhere to these standards.
+
+## Architecture & Design Patterns
+
+### MVC Pattern with React Hooks
+
+**Structure:**
+- **Model:** Custom hooks managing state & persistence (e.g., `useResearchData.ts`)
+- **View:** Pure React components (presentation only, minimal logic)
+- **Controller:** Custom hooks containing business logic (e.g., `useDebateController.ts`)
+- **Pages:** Orchestrate Model ↔ Controller ↔ View
+
+**Rules:**
+- Components should receive callbacks, not direct state mutations
+- Extract complex logic from components into controller hooks
+- Keep components focused on rendering and user interaction
+- Use services for cross-cutting concerns (API calls, storage, analytics)
+
+**Anti-patterns to Avoid:**
+- Business logic in components
+- Direct state mutations from components
+- Tight coupling between pages and hooks (use service layer)
+
+### File Structure & Organization
+
+**Naming Conventions:**
+- **Components:** `PascalCase.tsx` (e.g., `DebateTimeline.tsx`)
+- **Hooks:** `camelCase` with `use` prefix (e.g., `useDebateController.ts`)
+- **Utils:** `camelCase.ts` (e.g., `validation.ts`)
+- **Constants:** `SCREAMING_SNAKE_CASE` inside `camelCase.ts` files
+
+**Directory Structure:**
+```
+frontend/src/
+  components/         # React components (Views)
+    __tests__/        # Component tests
+    ui/               # shadcn/ui primitives
+  hooks/              # Custom hooks (Controllers/Model)
+    __tests__/        # Hook tests
+  pages/              # Route pages (Orchestrators)
+  services/           # Business logic services
+  utils/              # Utility functions
+  types/              # TypeScript type definitions
+  constants/         # Constants and feature flags
+  i18n/               # Internationalization
+  styles/             # CSS and design tokens
+  test/               # Test utilities and setup
+
+backend/src/
+  agents/             # AI agent implementations
+  orchestrator/       # Debate orchestration logic
+  api/                # API clients (OpenRouter, etc.)
+  routes/             # Express routes
+  services/           # Business logic services
+  utils/              # Utility functions
+  types/              # TypeScript type definitions
+  middleware/         # Express middleware
+  __tests__/          # Backend tests
+```
+
+## Code Quality & Standards
+
+### Strict Limits (Enforced via ESLint)
+
+**Function Limits (STRICTLY ENFORCED in `src/`):**
+- **Max 100 lines per function** - NO EXCEPTIONS
+- **Max complexity: 12**
+- **Max depth: 4**
+- **Max params: 4**
+- **Max statements: 20**
+
+**File Size Budget:**
+- Warn when source file grows beyond ~400 lines
+- Refactor/split when approaching ~450+ lines
+- Exemptions: tests, `src/components/ui/**` (shadcn primitives)
+
+**Rationale:**
+- Forces decomposition and single responsibility
+- Improves readability and maintainability
+- Makes code review easier
+- Reduces cognitive load
+
+**Action Required:**
+- If a function exceeds limits, extract utilities/hooks immediately
+- Don't add ESLint overrides - fix violations instead
+- Refactor early, don't accumulate technical debt
+
+### TypeScript Best Practices
+
+**Explicit Return Types:**
+- Required for exported functions (module boundaries)
+- Optional for internal functions
+- Use type imports: `import type { ... }`
+
+**Type Safety:**
+- Use Zod schemas for runtime validation (especially API responses)
+- Leverage TypeScript's type system for compile-time safety
+- Avoid `any` - use `unknown` and type guards instead
+- Run `npm run typecheck` before committing
+
+### Code Style Rules
+
+**ESLint Configuration:**
+- Complexity rules enforced as errors in `src/`
+- Relaxed rules for tests, E2E, and scripts
+- Import ordering and deduplication
+- Accessibility rules (jsx-a11y)
+
+**Prettier:**
+- Automatic formatting on save
+- Consistent code style across team
+- Integrated with lint-staged for pre-commit
+
+## Design System & UI
+
+### Design Tokens (CSS Variables)
+
+**Core Principle:** NEVER hardcode values - ALWAYS use tokens.
+
+**Token Categories:**
+- **Colors:** Semantic palette (background, foreground, primary, secondary, etc.)
+- **Spacing:** Scale from `--space-xs` (0.25rem) to `--space-4xl` (6rem)
+- **Typography:** Font families, sizes, line heights
+- **Layout:** Max widths, heights, z-index scale
+- **Shadows:** Soft, card, elevated, inner
+- **Transitions:** Fast, smooth, bounce
+
+**Usage:**
+```tsx
+// Tailwind classes (preferred)
+<div className="p-lg bg-card rounded-[var(--radius)] shadow-card">
+
+// CSS variables (when needed)
+.my-component {
+  padding: var(--space-lg);
+  background: hsl(var(--card));
+}
+```
+
+**Dark Mode:**
+- All tokens have dark mode variants
+- Automatic via `.dark` class
+- Consistent theming across app
+
+**Validation:**
+- Script to check for hardcoded values: `npm run lint:design-tokens`
+- Catches violations in CI/CD
+- NO HARDCODED VALUES ALLOWED
+
+## Testing Strategy
+
+### Test-Driven Development (TDD)
+
+**Workflow:**
+1. **Write test first** - Create test file before implementation
+2. **Run test** - Should fail (red)
+3. **Implement** - Write minimum code to pass test
+4. **Verify** - Test passes (green)
+5. **Refactor** - Clean up while keeping tests green
+
+### Test Types & Organization
+
+**Unit Tests (Vitest):**
+- Location: `src/**/__tests__/*.test.ts`
+- Purpose: Test individual functions, utilities, and hooks
+- Setup: `src/test/setup.ts` (mocks, etc.)
+
+**Component Tests (React Testing Library):**
+- Location: `src/components/__tests__/*.test.tsx`
+- Purpose: Test React components in isolation
+- Pattern: Test behavior, not implementation
+
+**E2E Tests (Playwright):**
+- Location: `e2e/*.spec.ts`
+- Purpose: Test complete user journeys
+- Deterministic: Always set language (`?lang=en`), clear state in `beforeEach`
+
+### Coverage Requirements
+
+**Thresholds:**
+- Critical files: 70-90% coverage
+  - `validation.ts`: 90%+ (security-critical)
+  - `apiService.ts`: 85%+ (API integration)
+  - `debateOrchestrator.ts`: 70%+ (business logic)
+  - `agents/*.ts`: 70%+ (agent logic)
+
+**Coverage Reports:**
+- Generated in `coverage/` directory
+- HTML report for detailed analysis
+- CI fails if thresholds not met
+
+## Security & Privacy
+
+### Input Validation
+
+**All user input must:**
+- Be validated with Zod schemas
+- Have maximum length limits enforced
+- Be sanitized before rendering/storage (if needed)
+- Be validated on both save and load (defense in depth)
+
+**Pattern:**
+```typescript
+// Validate with Zod
+const parsed = questionSchema.parse(data);
+
+// Sanitize if needed
+const sanitized = sanitizeString(parsed.text);
+
+// Store sanitized data
+```
+
+### API Security
+
+- API keys stored in environment variables, never in code
+- CORS configured properly
+- Rate limiting on API endpoints
+- Input validation on all API routes
+- Error messages don't expose sensitive info
+
+## Performance & Bundle Management
+
+### Bundle Size Budget
+
+**Targets:**
+- Max 200kB JS (gzipped)
+- Max 30kB CSS (gzipped)
+
+**Monitoring:**
+- Bundle analyzer: `npm run build:analyze`
+- CI checks bundle size
+- Regular audits
+
+### Code Splitting
+
+- Route-based code splitting (automatic with React Router)
+- Manual chunks for vendors
+- Lazy load heavy components
+
+## Development Workflow
+
+### Pre-commit Hooks (Husky)
+
+**Automatic Checks:**
+- Formatting (Prettier) on staged files
+- Linting (ESLint) on staged files
+- Related unit tests (Vitest) - smart test selection
+- Type checking (TypeScript)
+
+**Pre-push Hooks:**
+- Knip (unused exports check)
+
+### Daily Workflow
+
+1. **Pull latest changes:** `git pull origin main`
+2. **Start dev server:** `npm run dev` (frontend/backend)
+3. **Make changes** - Auto-reload on file changes
+4. **Run checks before committing:**
+   ```bash
+   npm run format:check
+   npm run lint
+   npm run typecheck
+   npm test -- --run
+   ```
+5. **Commit** - Pre-commit hooks run automatically
+
+### Pull Request Workflow (Open Source)
+
+**For Contributors:**
+- Create feature branch from `main`
+- Make small, focused changes
+- Write tests first (TDD)
+- Ensure all checks pass locally
+- Create PR with clear description
+- Address review feedback
+
+**For Maintainers:**
+- Review PRs carefully
+- Ensure CI passes
+- Check bundle size impact
+- Verify design tokens used
+- Test manually if needed
+- Merge when ready
+
+## Common Mistakes to Avoid
+
+1. **Code Quality Violations** - Enforce limits from day one, don't accumulate debt
+2. **Security Issues** - Always validate and sanitize input
+3. **E2E Test Flakiness** - Write deterministic tests, set language explicitly
+4. **Unused Code** - Use Knip, remove immediately
+5. **TypeScript Errors in CI** - Run typecheck locally, add to pre-commit
+6. **Circular Dependencies** - Plan dependencies upfront, use services
+7. **Hardcoded Values** - Always use design tokens
+8. **Missing Error Handling** - Handle all errors gracefully
+9. **Bundle Size Bloat** - Check analyzer before adding dependencies
+10. **Race Conditions** - Use proper async patterns, debounce/throttle
+
+## Key Principles
+
+1. **Strict Limits:** Enforced from day one, no exceptions
+2. **TDD Workflow:** Write tests first, prevents bugs
+3. **Design Tokens:** Never hardcode values
+4. **Security First:** Validate and sanitize everything
+5. **Performance Conscious:** Monitor bundle size continuously
+6. **Test Coverage:** Critical files must meet thresholds
+7. **Code Review:** All PRs reviewed before merge
+8. **Documentation:** Keep docs up-to-date
+
+## Project-Specific Notes
+
+### Backend Considerations
+
+- All API routes must validate input with Zod
+- Error handling must be consistent
+- Log errors appropriately (no sensitive data)
+- Rate limiting on external API calls
+- Environment variables for all secrets
+
+### Frontend Considerations
+
+- Follow MVC pattern strictly
+- Use design tokens for all styling
+- Test components with React Testing Library
+- E2E tests for critical user flows
+- Accessibility (a11y) is required
+
+### AI Agent Considerations
+
+- All prompts must be versioned and documented
+- Agent responses must be validated
+- Error handling for API failures
+- Cost tracking for API calls
+- Rate limiting to prevent abuse
+
+---
+
+**Remember:** These rules are not suggestions - they are requirements. Code that violates these standards will be rejected in PR reviews.
+

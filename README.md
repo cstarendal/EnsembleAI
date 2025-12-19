@@ -16,8 +16,8 @@ This system implements an ensemble strategy where different AI models with disti
 
 ## Architecture
 
-- **Frontend**: React + Vite
-- **Backend**: Node.js + Express
+- **Frontend**: React + Vite + TypeScript
+- **Backend**: Node.js + Express + TypeScript
 - **AI Models**: OpenAI, Anthropic, Google, Mistral (via OpenRouter)
 - **Communication**: Server-Sent Events (SSE) for real-time updates
 
@@ -37,72 +37,129 @@ This system implements an ensemble strategy where different AI models with disti
 ### Prerequisites
 
 - Node.js 20+
-- npm or yarn
-- OpenRouter API key
+- npm 10+
+- OpenRouter API key ([get one here](https://openrouter.ai/))
 
 ### Installation
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/YOUR_USERNAME/EnsembleAI.git
 cd EnsembleAI
 ```
 
 2. Install dependencies:
 ```bash
-# Backend
-cd backend
-npm install
-
-# Frontend
-cd ../frontend
 npm install
 ```
 
 3. Set up environment variables:
 ```bash
-# Backend .env
-OPENROUTER_API_KEY=your-api-key
-PORT=3000
-CORS_ORIGIN=http://localhost:5173
+# Backend
+cp backend/.env.example backend/.env
+# Edit backend/.env and add your OPENROUTER_API_KEY
 
-# Frontend .env
-VITE_API_URL=http://localhost:3000
+# Frontend
+cp frontend/.env.example frontend/.env
+# Edit frontend/.env if needed
 ```
 
 4. Start development servers:
 ```bash
-# Backend (terminal 1)
-cd backend
-npm run dev
-
-# Frontend (terminal 2)
-cd frontend
 npm run dev
 ```
+
+This will start:
+- Frontend on http://localhost:5173
+- Backend on http://localhost:3000
 
 ## Project Structure
 
 ```
 EnsembleAI/
 ├── frontend/          # React frontend application
+│   ├── src/
+│   │   ├── components/  # React components (Views)
+│   │   ├── hooks/       # Custom hooks (Controllers/Model)
+│   │   ├── pages/       # Route pages (Orchestrators)
+│   │   ├── services/    # Business logic services
+│   │   └── ...
+│   └── ...
 ├── backend/           # Node.js backend server
+│   ├── src/
+│   │   ├── agents/      # AI agent implementations
+│   │   ├── orchestrator/ # Debate orchestration
+│   │   ├── routes/      # Express routes
+│   │   └── ...
+│   └── ...
 ├── docs/              # Documentation
-│   └── DESIGN.md     # Complete design document
-└── README.md         # This file
+│   ├── DESIGN.md       # Complete design document
+│   └── PROJECT_LEARNINGS.md # Architecture patterns
+├── e2e/               # E2E tests
+└── .github/           # GitHub workflows and templates
 ```
+
+## Development
+
+### Code Quality Standards
+
+This project follows strict code quality standards:
+
+- **Max 100 lines per function** (strictly enforced)
+- **Max complexity: 12**
+- **Max depth: 4**
+- **Max params: 4**
+- **Design tokens** (no hardcoded values)
+- **TDD workflow** (write tests first)
+
+See [`.cursorrules`](.cursorrules) for complete standards.
+
+### Available Scripts
+
+```bash
+# Development
+npm run dev              # Start both frontend and backend
+npm run dev:frontend     # Start frontend only
+npm run dev:backend      # Start backend only
+
+# Building
+npm run build            # Build both
+npm run build:frontend   # Build frontend
+npm run build:backend     # Build backend
+
+# Testing
+npm test                 # Run all tests
+npm run test:frontend    # Frontend tests
+npm run test:backend     # Backend tests
+npm run test:e2e        # E2E tests
+
+# Code Quality
+npm run lint             # Lint all code
+npm run typecheck        # Type check
+npm run format           # Format code
+npm run format:check     # Check formatting
+```
+
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+### Quick Start for Contributors
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Make your changes following our [code standards](.cursorrules)
+4. Run checks: `npm run lint && npm run typecheck && npm test`
+5. Commit and push: `git push origin feature/my-feature`
+6. Create a Pull Request
 
 ## Documentation
 
-See [DESIGN.md](./DESIGN.md) for the complete design document including:
-- System architecture
-- Agent roles and debate flow
-- API design
-- Prompt templates
-- UI/UX design
-- Implementation plan
-
-See [docs/PROJECT_LEARNINGS.md](./docs/PROJECT_LEARNINGS.md) for the reusable architecture, quality, testing, and operational playbook carried over from prior projects.
+- **[DESIGN.md](docs/DESIGN.md)** - Complete design document with architecture, API design, and implementation plan
+- **[PROJECT_LEARNINGS.md](docs/PROJECT_LEARNINGS.md)** - Architecture patterns and best practices from previous projects
+- **[CSS_GUIDE.md](docs/CSS_GUIDE.md)** - Complete guide for CSS structure, design tokens, and styling
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines
+- **[.cursorrules](.cursorrules)** - Code quality standards and patterns
 
 ## Development Status
 
@@ -110,9 +167,8 @@ See [docs/PROJECT_LEARNINGS.md](./docs/PROJECT_LEARNINGS.md) for the reusable ar
 
 ## License
 
-[To be determined]
+MIT License - see [LICENSE](LICENSE) file for details.
 
-## Contributing
+## Acknowledgments
 
-[To be determined]
-
+Built with patterns and learnings from previous projects. See [PROJECT_LEARNINGS.md](docs/PROJECT_LEARNINGS.md) for details.
