@@ -412,3 +412,39 @@ See `docs/UBIQUITOUS_LANGUAGE.md` for complete guide.
 
 **Remember:** These rules are not suggestions - they are requirements. Code that violates these standards will be rejected in PR reviews.
 
+
+
+## Development Workflow (Everyone uses Pull Requests)
+
+**Non-negotiable:** all changes (including maintainer changes) go through a PR.
+
+### Branching
+
+- Create a short-lived branch from `main`
+- Use small, focused commits with clear messages
+
+### PR Requirements
+
+- PR must describe **what**, **why**, and **how verified**
+- CI must be green before merge
+- Maintainer does self-review in PR before merging
+
+### Merge Policy
+
+- Prefer **squash merge** to keep `main` history clean
+- Never merge a red pipeline
+
+## AI Agent Operational Contract (CI/CD Ownership)
+
+When you (the AI agent) are asked to “fix CI”, “fix build”, “monitor pipeline”, or make any change that impacts delivery:
+
+- **Own the outcome end-to-end**: do not stop at “changes pushed”.
+- **Always deliver via GitHub Actions**: push branch → open/update PR → get CI green → merge → verify `main` CI run is green.
+- **Deployment is not optional**: ensure the `deploy` job runs on `main` and produces the deployment artifact.
+- **Report clearly**: if anything is red/skipped, explain exactly why and what you did (or will do next).
+
+Practical implications:
+
+- Never leave PR checks in a broken state.
+- If a step can hang (e.g., E2E server waits), add deterministic timeouts and stable ports.
+- Do not commit generated artifacts; ignore them in `.gitignore`/`.prettierignore`.
