@@ -4,4 +4,3 @@ test("homepage loads", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveTitle(/Ensemble AI/i);
 });
-
