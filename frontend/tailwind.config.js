@@ -3,6 +3,16 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   darkMode: "class",
   theme: {
+    // NOTE: Breakpoints intentionally remain numeric.
+    // CSS variables are not supported in media queries, so `var(--breakpoint-*)` cannot be used here.
+    // Keep these values in sync with `src/styles/design-tokens.css`.
+    screens: {
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+      "2xl": "1536px",
+    },
     extend: {
       colors: {
         // Semantic colors using design tokens
@@ -31,6 +41,18 @@ export default {
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -62,6 +84,9 @@ export default {
       fontFamily: {
         sans: "var(--font-sans)",
         mono: "var(--font-mono)",
+      },
+      maxWidth: {
+        "4xl": "var(--max-width-4xl)",
       },
       transitionDuration: {
         fast: "var(--transition-fast)",

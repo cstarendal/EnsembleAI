@@ -9,11 +9,17 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
-  workers: isCI ? 1 : undefined,
+  workers: isCI ? 2 : undefined,
   reporter: isCI ? [["github"], ["html", { open: "never" }]] : "html",
+  timeout: 60 * 1000,
+  expect: {
+    timeout: 5 * 1000,
+  },
   use: {
     baseURL: isCI ? previewURL : devURL,
     trace: "on-first-retry",
+    actionTimeout: 10 * 1000,
+    navigationTimeout: 30 * 1000,
   },
   projects: isCI
     ? [

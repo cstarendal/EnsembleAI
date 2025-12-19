@@ -6,7 +6,11 @@ interface DebateTimelineProps {
 
 function DebateTimeline({ session }: DebateTimelineProps): JSX.Element {
   if (!session) {
-    return <div className="text-center text-muted-foreground p-lg">No active research session</div>;
+    return (
+      <div className="text-center text-muted-foreground p-md md:p-lg">
+        No active research session
+      </div>
+    );
   }
 
   return (
@@ -25,7 +29,7 @@ function DebateTimeline({ session }: DebateTimelineProps): JSX.Element {
       </div>
 
       {session.plan && (
-        <div className="bg-card p-md rounded-lg shadow-card">
+        <div className="bg-card p-sm md:p-md rounded-lg shadow-card">
           <h3 className="text-sm font-semibold text-foreground mb-xs">Research Plan</h3>
           <p className="text-sm text-muted-foreground">{session.plan.plan}</p>
           {session.plan.searchQueries.length > 0 && (
@@ -39,7 +43,7 @@ function DebateTimeline({ session }: DebateTimelineProps): JSX.Element {
       )}
 
       {session.sources && session.sources.length > 0 && (
-        <div className="bg-card p-md rounded-lg shadow-card">
+        <div className="bg-card p-sm md:p-md rounded-lg shadow-card">
           <h3 className="text-sm font-semibold text-foreground mb-sm">
             Sources Found ({session.sources.length})
           </h3>
@@ -62,7 +66,7 @@ function DebateTimeline({ session }: DebateTimelineProps): JSX.Element {
       )}
 
       {session.messages.length > 0 && (
-        <div className="bg-card p-md rounded-lg shadow-card">
+        <div className="bg-card p-sm md:p-md rounded-lg shadow-card">
           <h3 className="text-sm font-semibold text-foreground mb-sm">Agent Messages</h3>
           <div className="space-y-xs">
             {session.messages.map((msg, idx) => (
