@@ -52,23 +52,34 @@ This project adheres to a code of conduct that all contributors are expected to 
 
 ## Development Workflow
 
+**This project uses PR-based development for everyone, including the maintainer.** This creates a clear history, enables self-review, and helps learn best practices.
+
 ### Branch Strategy
 
 - **main**: Always deployable, protected branch
 - **Feature branches**: `feature/description` (e.g., `feature/add-source-critic`)
 - **Bug fixes**: `fix/description` (e.g., `fix/debate-timeout`)
 - **Documentation**: `docs/description`
+- **Refactoring**: `refactor/description`
+- **Tests**: `test/description`
 
 ### Workflow Steps
 
-1. **Create a branch** from `main`:
+1. **Pull latest changes:**
+   ```bash
+   git pull origin main
+   ```
+
+2. **Create a branch** from `main`:
    ```bash
    git checkout -b feature/my-feature
    ```
 
-2. **Make changes** following our code standards
+3. **Make changes** following our code standards
 
-3. **Run checks locally** before committing:
+4. **Write tests first (TDD)** - Create tests before implementation
+
+5. **Run checks locally** before committing:
    ```bash
    npm run format:check
    npm run lint
@@ -76,16 +87,29 @@ This project adheres to a code of conduct that all contributors are expected to 
    npm test -- --run
    ```
 
-4. **Commit changes** (pre-commit hooks will run automatically):
+6. **Commit changes** (pre-commit hooks will run automatically):
    ```bash
    git add .
    git commit -m "feat: add new feature"
    ```
 
-5. **Push and create PR**:
+7. **Push branch:**
    ```bash
    git push origin feature/my-feature
    ```
+
+8. **Create Pull Request** on GitHub:
+   - Use the PR template
+   - Write clear description
+   - Reference related issues if any
+   - Wait for CI to pass
+
+9. **Self-review** your PR before merging:
+   - Review the diff
+   - Check CI results
+   - Verify all checklist items
+
+10. **Merge when ready** - Use "Squash and merge" to keep history clean
 
 ## Code Standards
 
@@ -235,11 +259,14 @@ Brief description of changes
 
 ### Review Process
 
-1. **Automated checks** must pass (CI)
-2. **Code review** by maintainers
-3. **Address feedback** if requested
-4. **Approval** required before merge
-5. **Squash and merge** (maintainers will handle)
+1. **Automated checks** must pass (CI) - All jobs must be green
+2. **Self-review** - Review your own PR before merging
+   - Check the diff carefully
+   - Verify all changes are intentional
+   - Ensure code follows standards
+3. **For external contributors:** Maintainer will review and provide feedback
+4. **Address feedback** if requested
+5. **Merge when ready** - Use "Squash and merge" to keep history clean
 
 ### PR Size Guidelines
 
