@@ -11,4 +11,8 @@ coverage
 .env.local
 *.min.js
 *.min.css
-
+# Playwright/Vitest artifacts
+frontend/playwright-report/
+frontend/test-results/
+**/playwright-report/**
+**/test-results/**
