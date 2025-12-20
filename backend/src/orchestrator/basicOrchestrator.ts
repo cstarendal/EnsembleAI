@@ -9,6 +9,8 @@ export interface OrchestratorEvent {
 
 export type EventCallback = (event: OrchestratorEvent) => void;
 
+const NOOP_EVENT: EventCallback = () => undefined;
+
 function updateSessionStatus(
   session: Session,
   status: Session["status"],
@@ -163,7 +165,10 @@ async function createResearchPlan(question: string): Promise<ResearchPlan> {
   };
 }
 
-async function findSources(plan: ResearchPlan, onEvent: EventCallback): Promise<Source[]> {
+export async function findSources(
+  plan: ResearchPlan,
+  onEvent: EventCallback = NOOP_EVENT
+): Promise<Source[]> {
   const messages = [
     {
       role: "system" as const,
@@ -174,7 +179,9 @@ async function findSources(plan: ResearchPlan, onEvent: EventCallback): Promise<
       role: "user" as const,
       content: `Provide information about these research topics:\n${plan.searchQueries
         .map((text) => `- ${text}`)
-        .join("\n")}\n\nReturn JSON array: [{"title": "Topic/Area Name", "snippet": "Key information and facts...", "url": "optional - only if real well-known source"}]`,
+        .join(
+          "\n"
+        )}\n\nReturn JSON array: [{"title": "Topic/Area Name", "snippet": "Key information and facts...", "url": "optional - only if real well-known source"}]`,
     },
   ];
 
@@ -261,7 +268,7 @@ async function findSources(plan: ResearchPlan, onEvent: EventCallback): Promise<
 export async function critiqueSources(
   sources: Source[],
   question: string,
-  onEvent: EventCallback
+  onEvent: EventCallback = NOOP_EVENT
 ): Promise<Source[]> {
   console.log(`[Orchestrator] Critiquing ${sources.length} sources`);
   const critiquedSources: Source[] = [];
@@ -281,7 +288,7 @@ export async function critiqueSources(
       ];
 
       const critiqueMessage = await callAgent(AGENT_ROLES.SOURCE_CRITIC, messages);
-      
+
       // Emit message from critic
       onEvent({
         type: "message",
@@ -311,7 +318,7 @@ export async function critiqueSources(
       critiquedSources.push({
         ...source,
         qualityRating: 3,
-        critique: "Critique unavailable",
+        critique: "No critique available",
       });
     }
   }

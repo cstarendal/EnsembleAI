@@ -3,9 +3,14 @@ import type { Source, ResearchPlan } from "../../types/session.js";
 import * as openRouter from "../../api/openRouter.js";
 
 // Mock the openRouter module
-vi.mock("../../api/openRouter.js", () => ({
-  callAgent: vi.fn(),
-}));
+vi.mock("../../api/openRouter.js", async () => {
+  const actual =
+    await vi.importActual<typeof import("../../api/openRouter.js")>("../../api/openRouter.js");
+  return {
+    ...actual,
+    callAgent: vi.fn(),
+  };
+});
 
 // Need to import after mocking
 async function getFindSources() {
@@ -44,7 +49,8 @@ describe("Source Management", () => {
         ])
       );
 
-      const sources = await findSources(plan);
+      const mockOnEvent = vi.fn();
+      const sources = await findSources(plan, mockOnEvent);
 
       expect(sources).toHaveLength(4);
       expect(sources[0]?.hunter).toBe("A");
@@ -72,7 +78,8 @@ describe("Source Management", () => {
         ])
       );
 
-      const sources = await findSources(plan);
+      const mockOnEvent = vi.fn();
+      const sources = await findSources(plan, mockOnEvent);
 
       expect(sources).toHaveLength(1);
       expect(sources[0]?.url).toBe("http://example.com/same");
@@ -95,7 +102,8 @@ describe("Source Management", () => {
         "Rating: 4\nCritique: This is a high-quality source with relevant information."
       );
 
-      const critiqued = await critiqueSources(sources, "Test question");
+      const mockOnEvent = vi.fn();
+      const critiqued = await critiqueSources(sources, "Test question", mockOnEvent);
 
       expect(critiqued).toHaveLength(1);
       expect(critiqued[0]?.qualityRating).toBe(4);
@@ -115,7 +123,8 @@ describe("Source Management", () => {
 
       vi.mocked(openRouter.callAgent).mockResolvedValueOnce("Critique: This source is relevant.");
 
-      const critiqued = await critiqueSources(sources, "Test question");
+      const mockOnEvent = vi.fn();
+      const critiqued = await critiqueSources(sources, "Test question", mockOnEvent);
 
       expect(critiqued[0]?.qualityRating).toBe(3); // Default
       expect(critiqued[0]?.critique).toBeDefined();
@@ -133,7 +142,8 @@ describe("Source Management", () => {
 
       vi.mocked(openRouter.callAgent).mockRejectedValueOnce(new Error("API error"));
 
-      const critiqued = await critiqueSources(sources, "Test question");
+      const mockOnEvent = vi.fn();
+      const critiqued = await critiqueSources(sources, "Test question", mockOnEvent);
 
       expect(critiqued).toHaveLength(1);
       expect(critiqued[0]?.qualityRating).toBe(3);
