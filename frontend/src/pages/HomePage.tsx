@@ -46,7 +46,12 @@ function HomePage(): JSX.Element {
 
             {session.answer && (
               <section>
-                <AnswerDisplay answer={session.answer} sources={session.sources} />
+                <AnswerDisplay
+                  answer={session.answer}
+                  sources={session.sources}
+                  agentRole={session.answerAgentRole}
+                  model={session.answerModel}
+                />
               </section>
             )}
           </>

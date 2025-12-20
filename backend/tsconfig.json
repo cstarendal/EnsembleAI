@@ -13,7 +13,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,

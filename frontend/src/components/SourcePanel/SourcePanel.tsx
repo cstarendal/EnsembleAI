@@ -24,17 +24,24 @@ function SourcePanel({ sources }: SourcePanelProps): JSX.Element {
           >
             <div className="flex items-start justify-between gap-md mb-sm">
               <div className="flex-1">
-                <a
-                  href={source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline font-medium text-base md:text-lg"
-                >
-                  {source.title}
-                </a>
+                {source.url ? (
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline font-medium text-base md:text-lg"
+                  >
+                    {source.title}
+                  </a>
+                ) : (
+                  <span className="font-medium text-base md:text-lg text-foreground">
+                    {source.title}
+                  </span>
+                )}
                 {source.hunter && (
                   <span className="ml-sm text-xs text-muted-foreground">
-                    (Hunter {source.hunter})
+                    (Hunter {source.hunter}
+                    {source.hunterModel && ` - ${source.hunterModel}`})
                   </span>
                 )}
               </div>
@@ -62,7 +69,14 @@ function SourcePanel({ sources }: SourcePanelProps): JSX.Element {
             <p className="text-sm text-muted-foreground mb-sm">{source.snippet}</p>
             {source.critique && (
               <div className="mt-sm pt-sm border-t border-border">
-                <p className="text-xs font-medium text-foreground mb-xs">Critique:</p>
+                <div className="flex items-center gap-xs mb-xs">
+                  <p className="text-xs font-medium text-foreground">Critique:</p>
+                  {source.criticModel && (
+                    <span className="text-xs text-muted-foreground">
+                      (Source Critic - {source.criticModel})
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">{source.critique}</p>
               </div>
             )}

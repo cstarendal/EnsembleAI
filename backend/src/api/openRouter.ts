@@ -117,3 +117,26 @@ export async function callAgent(
 }
 
 export { AGENT_TO_PROVIDER_ID };
+
+export function getModelDisplayName(role: AgentRole): string {
+  const modelId = AGENT_TO_PROVIDER_ID[role];
+  if (!modelId) return "Unknown";
+  
+  const parts = modelId.split("/");
+  const provider = parts[0] || "";
+  const modelPart = parts[1];
+  if (!modelPart) return "Unknown";
+  
+  const model = modelPart.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+  
+  // Format provider names nicely
+  const providerNames: Record<string, string> = {
+    openai: "GPT",
+    anthropic: "Claude",
+    mistralai: "Mistral",
+    google: "Gemini",
+  };
+  
+  const providerName = providerNames[provider] || provider;
+  return `${providerName} ${model}`;
+}

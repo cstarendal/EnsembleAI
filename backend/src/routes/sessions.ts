@@ -1,7 +1,7 @@
 import express from "express";
 import { z } from "zod";
 import { runBasicOrchestration } from "../orchestrator/basicOrchestrator.js";
-import type { Session, ResearchPlan, Source } from "../types/session.js";
+import type { Session, ResearchPlan, Source, AgentMessage } from "../types/session.js";
 import { SESSION_STATUS } from "../constants/ubiquitousLanguage.js";
 import type { OrchestratorEvent } from "../orchestrator/basicOrchestrator.js";
 
@@ -57,6 +57,11 @@ function applyEventToSession(session: Session, event: OrchestratorEvent): Sessio
 
   if (event.type === "answer") {
     updated.answer = (event.data as { answer: string }).answer;
+  }
+
+  if (event.type === "message") {
+    const message = event.data as AgentMessage;
+    updated.messages = [...(updated.messages || []), message];
   }
 
   return updated;

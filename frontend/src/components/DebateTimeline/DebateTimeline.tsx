@@ -30,7 +30,14 @@ function DebateTimeline({ session }: DebateTimelineProps): JSX.Element {
 
       {session.plan && (
         <div className="bg-card p-sm md:p-md rounded-lg shadow-card">
-          <h3 className="text-sm font-semibold text-foreground mb-xs">Research Plan</h3>
+          <div className="flex items-center gap-sm mb-xs">
+            <h3 className="text-sm font-semibold text-foreground">Research Plan</h3>
+            {session.plan.agentRole && session.plan.model && (
+              <span className="text-xs text-muted-foreground">
+                by {session.plan.agentRole} ({session.plan.model})
+              </span>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">{session.plan.plan}</p>
           {session.plan.searchQueries.length > 0 && (
             <ul className="mt-sm list-disc list-inside text-sm text-muted-foreground">
@@ -48,8 +55,11 @@ function DebateTimeline({ session }: DebateTimelineProps): JSX.Element {
           <div className="space-y-xs">
             {session.messages.map((msg, idx) => (
               <div key={idx} className="text-sm">
-                <span className="font-medium text-foreground">{msg.role}:</span>{" "}
-                <span className="text-muted-foreground">{msg.content}</span>
+                <span className="font-medium text-foreground">{msg.role}</span>
+                {msg.model && (
+                  <span className="text-xs text-muted-foreground ml-xs">({msg.model})</span>
+                )}
+                <span className="text-muted-foreground">: {msg.content}</span>
               </div>
             ))}
           </div>

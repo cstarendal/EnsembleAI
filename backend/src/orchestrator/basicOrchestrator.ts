@@ -1,4 +1,4 @@
-import { callAgent } from "../api/openRouter.js";
+import { callAgent, getModelDisplayName } from "../api/openRouter.js";
 import type { Session, ResearchPlan, Source } from "../types/session.js";
 import { AGENT_ROLES, SESSION_STATUS } from "../constants/ubiquitousLanguage.js";
 
@@ -25,11 +25,20 @@ async function executePlanningPhase(
 ): Promise<ResearchPlan> {
   const plan = await createResearchPlan(session.question);
   onEvent({ type: "plan", data: plan });
+  onEvent({
+    type: "message",
+    data: {
+      role: plan.agentRole || AGENT_ROLES.RESEARCH_PLANNER,
+      content: plan.plan,
+      model: plan.model,
+      timestamp: new Date(),
+    },
+  });
   return plan;
 }
 
 async function executeHuntingPhase(plan: ResearchPlan, onEvent: EventCallback): Promise<Source[]> {
-  const sources = await findSources(plan);
+  const sources = await findSources(plan, onEvent);
   onEvent({ type: "sources", data: sources });
   return sources;
 }
@@ -39,7 +48,7 @@ async function executeCritiquingPhase(
   question: string,
   onEvent: EventCallback
 ): Promise<Source[]> {
-  const critiquedSources = await critiqueSources(sources, question);
+  const critiquedSources = await critiqueSources(sources, question, onEvent);
   onEvent({ type: "sources", data: critiquedSources });
   return critiquedSources;
 }
@@ -96,6 +105,8 @@ async function executeFullOrchestration(
     plan,
     sources,
     answer,
+    answerAgentRole: AGENT_ROLES.SYNTHESIZER,
+    answerModel: getModelDisplayName(AGENT_ROLES.SYNTHESIZER),
     status: SESSION_STATUS.COMPLETE,
     updatedAt: new Date(),
   };
@@ -147,21 +158,23 @@ async function createResearchPlan(question: string): Promise<ResearchPlan> {
   return {
     plan: planText || plannerMessage.substring(0, 200),
     searchQueries: searchTexts.length > 0 ? searchTexts : [question],
+    agentRole: AGENT_ROLES.RESEARCH_PLANNER,
+    model: getModelDisplayName(AGENT_ROLES.RESEARCH_PLANNER),
   };
 }
 
-async function findSources(plan: ResearchPlan): Promise<Source[]> {
+async function findSources(plan: ResearchPlan, onEvent: EventCallback): Promise<Source[]> {
   const messages = [
     {
       role: "system" as const,
       content:
-        "You are a Source Hunter. Find relevant academic and policy sources. Return a JSON array of sources with title, url, and snippet fields.",
+        "You are a Source Hunter. Provide relevant information and knowledge from your training data about the research topics. Focus on factual, well-established information. If you know of specific well-known sources, you may include them, but do NOT make up URLs or fake sources. Return a JSON array with title (topic/area), snippet (key information), and optionally url (only if you're certain it's a real, well-known source).",
     },
     {
       role: "user" as const,
-      content: `Find sources for these search texts:\n${plan.searchQueries
+      content: `Provide information about these research topics:\n${plan.searchQueries
         .map((text) => `- ${text}`)
-        .join("\n")}\n\nReturn JSON array: [{"title": "...", "url": "...", "snippet": "..."}]`,
+        .join("\n")}\n\nReturn JSON array: [{"title": "Topic/Area Name", "snippet": "Key information and facts...", "url": "optional - only if real well-known source"}]`,
     },
   ];
 
@@ -171,6 +184,26 @@ async function findSources(plan: ResearchPlan): Promise<Source[]> {
     callAgent(AGENT_ROLES.SOURCE_HUNTER_B, messages),
   ]);
 
+  // Emit messages from both hunters
+  onEvent({
+    type: "message",
+    data: {
+      role: AGENT_ROLES.SOURCE_HUNTER_A,
+      content: `Found ${hunterAMessage.match(/\[[\s\S]*\]/) ? "sources" : "no sources"}`,
+      model: getModelDisplayName(AGENT_ROLES.SOURCE_HUNTER_A),
+      timestamp: new Date(),
+    },
+  });
+  onEvent({
+    type: "message",
+    data: {
+      role: AGENT_ROLES.SOURCE_HUNTER_B,
+      content: `Found ${hunterBMessage.match(/\[[\s\S]*\]/) ? "sources" : "no sources"}`,
+      model: getModelDisplayName(AGENT_ROLES.SOURCE_HUNTER_B),
+      timestamp: new Date(),
+    },
+  });
+
   const allSources: Source[] = [];
 
   // Parse Hunter A results
@@ -179,7 +212,11 @@ async function findSources(plan: ResearchPlan): Promise<Source[]> {
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]) as Source[];
       parsed.slice(0, 6).forEach((source) => {
-        allSources.push({ ...source, hunter: "A" });
+        allSources.push({
+          ...source,
+          hunter: "A",
+          hunterModel: getModelDisplayName(AGENT_ROLES.SOURCE_HUNTER_A),
+        });
       });
     }
   } catch {
@@ -192,30 +229,40 @@ async function findSources(plan: ResearchPlan): Promise<Source[]> {
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]) as Source[];
       parsed.slice(0, 6).forEach((source) => {
-        allSources.push({ ...source, hunter: "B" });
+        allSources.push({
+          ...source,
+          hunter: "B",
+          hunterModel: getModelDisplayName(AGENT_ROLES.SOURCE_HUNTER_B),
+        });
       });
     }
   } catch {
     // Continue if parsing fails
   }
 
-  // Deduplicate by URL and return up to 8 sources
-  const uniqueSources = Array.from(new Map(allSources.map((s) => [s.url, s])).values()).slice(0, 8);
+  // Deduplicate by title (or URL if available) and return up to 8 sources
+  const uniqueSources = Array.from(
+    new Map(allSources.map((s) => [s.url || s.title, s])).values()
+  ).slice(0, 8);
 
-  // Fallback if no sources found
+  // Fallback if no sources found - provide knowledge directly
   if (uniqueSources.length === 0) {
-    return plan.searchQueries.slice(0, 4).map((text, idx) => ({
-      title: `Source for: ${text}`,
-      url: `https://example.com/source-${idx + 1}`,
-      snippet: `Relevant information about ${text}`,
+    return plan.searchQueries.slice(0, 4).map((text) => ({
+      title: `Information about: ${text}`,
+      snippet: `Knowledge and information related to ${text}`,
       hunter: "A" as const,
+      hunterModel: getModelDisplayName(AGENT_ROLES.SOURCE_HUNTER_A),
     }));
   }
 
   return uniqueSources;
 }
 
-export async function critiqueSources(sources: Source[], question: string): Promise<Source[]> {
+export async function critiqueSources(
+  sources: Source[],
+  question: string,
+  onEvent: EventCallback
+): Promise<Source[]> {
   console.log(`[Orchestrator] Critiquing ${sources.length} sources`);
   const critiquedSources: Source[] = [];
 
@@ -229,11 +276,22 @@ export async function critiqueSources(sources: Source[], question: string): Prom
         },
         {
           role: "user" as const,
-          content: `Research Question: ${question}\n\nSource:\nTitle: ${source.title}\nURL: ${source.url}\nSnippet: ${source.snippet}\n\nProvide:\n1. Quality rating (1-5, where 5 is highest)\n2. Brief critique (2-3 sentences)\n\nFormat: Rating: X\nCritique: ...`,
+          content: `Research Question: ${question}\n\nSource:\nTitle: ${source.title}${source.url ? `\nURL: ${source.url}` : ""}\nSnippet: ${source.snippet}\n\nProvide:\n1. Quality rating (1-5, where 5 is highest)\n2. Brief critique (2-3 sentences)\n\nFormat: Rating: X\nCritique: ...`,
         },
       ];
 
       const critiqueMessage = await callAgent(AGENT_ROLES.SOURCE_CRITIC, messages);
+      
+      // Emit message from critic
+      onEvent({
+        type: "message",
+        data: {
+          role: AGENT_ROLES.SOURCE_CRITIC,
+          content: `Critiqued: ${source.title}`,
+          model: getModelDisplayName(AGENT_ROLES.SOURCE_CRITIC),
+          timestamp: new Date(),
+        },
+      });
       const ratingMatch = critiqueMessage.match(/Rating:\s*(\d)/i);
       const critiqueMatch = critiqueMessage.match(/Critique:\s*(.+)/is);
 
@@ -245,6 +303,7 @@ export async function critiqueSources(sources: Source[], question: string): Prom
         ...source,
         qualityRating: Math.max(1, Math.min(5, qualityRating)) as number,
         critique: critique as string,
+        criticModel: getModelDisplayName(AGENT_ROLES.SOURCE_CRITIC),
       });
     } catch (error) {
       console.error(`[Orchestrator] Error critiquing source ${source.title}:`, error);
