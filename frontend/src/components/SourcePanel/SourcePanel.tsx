@@ -41,7 +41,7 @@ function SourcePanel({ sources }: SourcePanelProps): JSX.Element {
                 {source.hunter && (
                   <span className="ml-sm text-xs text-muted-foreground">
                     (Hunter {source.hunter}
-                    {source.hunterModel && ` - ${source.hunterModel}`})
+                    {source.hunterAgent && ` - ${source.hunterAgent}`})
                   </span>
                 )}
               </div>
@@ -71,9 +71,9 @@ function SourcePanel({ sources }: SourcePanelProps): JSX.Element {
               <div className="mt-sm pt-sm border-t border-border">
                 <div className="flex items-center gap-xs mb-xs">
                   <p className="text-xs font-medium text-foreground">Critique:</p>
-                  {source.criticModel && (
+                  {source.criticAgent && (
                     <span className="text-xs text-muted-foreground">
-                      (Source Critic - {source.criticModel})
+                      (Source Critic - {source.criticAgent})
                     </span>
                   )}
                 </div>

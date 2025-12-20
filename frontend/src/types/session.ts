@@ -2,7 +2,7 @@ export interface ResearchPlan {
   plan: string;
   searchQueries: string[];
   agentRole?: string; // "Research Planner"
-  model?: string; // "GPT 4o Mini"
+  agent?: string; // Display name of the agent (e.g., "GPT 4o Mini")
 }
 
 export interface Source {
@@ -10,16 +10,16 @@ export interface Source {
   url?: string; // Optional - may not have URL if from training data
   snippet: string;
   qualityRating?: number; // 1-5 scale
-  critique?: string; // Source Critic's analysis
+  critique?: string; // Source Critic's research notes
   hunter?: "A" | "B"; // Which hunter found this source
-  hunterModel?: string; // "GPT 4o" or "Claude 3.5 Sonnet"
-  criticModel?: string; // "Mistral Large"
+  hunterAgent?: string; // Display name of the hunter agent
+  criticAgent?: string; // Display name of the critic agent
 }
 
 export interface AgentMessage {
   role: string;
   content: string;
-  model?: string; // Model that generated this message
+  agent?: string; // Display name of the agent that generated this message
   timestamp: string;
 }
 
@@ -32,7 +32,7 @@ export interface Session {
   messages: AgentMessage[];
   answer?: string;
   answerAgentRole?: string; // "Synthesizer"
-  answerModel?: string; // "GPT 4o"
+  answerAgent?: string; // Display name of the agent that generated the answer
   createdAt: string;
   updatedAt: string;
 }

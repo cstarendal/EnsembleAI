@@ -1,4 +1,4 @@
-import { callAgent, getModelDisplayName } from "../api/openRouter.js";
+import { callAgent, getAgentDisplayName } from "../api/openRouter.js";
 import type { Session, ResearchPlan, Source } from "../types/session.js";
 import { AGENT_ROLES, SESSION_STATUS } from "../constants/ubiquitousLanguage.js";
 
@@ -32,7 +32,7 @@ async function executePlanningPhase(
     data: {
       role: plan.agentRole || AGENT_ROLES.RESEARCH_PLANNER,
       content: plan.plan,
-      model: plan.model,
+      agent: plan.agent,
       timestamp: new Date(),
     },
   });
@@ -91,7 +91,7 @@ async function executeFullOrchestration(
   const session1 = updateSessionStatus(session, SESSION_STATUS.PLANNING, onEvent);
   console.log(`[Orchestrator] Status updated to PLANNING`);
   const plan = await executePlanningPhase(session1, onEvent);
-  console.log(`[Orchestrator] Planning phase complete`);
+  console.log(`[Orchestrator] Planning round complete`);
 
   const session2 = updateSessionStatus(session1, SESSION_STATUS.HUNTING, onEvent);
   const rawSources = await executeHuntingPhase(plan, onEvent);
@@ -108,7 +108,7 @@ async function executeFullOrchestration(
     sources,
     answer,
     answerAgentRole: AGENT_ROLES.SYNTHESIZER,
-    answerModel: getModelDisplayName(AGENT_ROLES.SYNTHESIZER),
+    answerAgent: getAgentDisplayName(AGENT_ROLES.SYNTHESIZER),
     status: SESSION_STATUS.COMPLETE,
     updatedAt: new Date(),
   };
@@ -161,7 +161,7 @@ async function createResearchPlan(question: string): Promise<ResearchPlan> {
     plan: planText || plannerMessage.substring(0, 200),
     searchQueries: searchTexts.length > 0 ? searchTexts : [question],
     agentRole: AGENT_ROLES.RESEARCH_PLANNER,
-    model: getModelDisplayName(AGENT_ROLES.RESEARCH_PLANNER),
+    agent: getAgentDisplayName(AGENT_ROLES.RESEARCH_PLANNER),
   };
 }
 
@@ -197,7 +197,7 @@ export async function findSources(
     data: {
       role: AGENT_ROLES.SOURCE_HUNTER_A,
       content: `Found ${hunterAMessage.match(/\[[\s\S]*\]/) ? "sources" : "no sources"}`,
-      model: getModelDisplayName(AGENT_ROLES.SOURCE_HUNTER_A),
+      agent: getAgentDisplayName(AGENT_ROLES.SOURCE_HUNTER_A),
       timestamp: new Date(),
     },
   });
@@ -206,7 +206,7 @@ export async function findSources(
     data: {
       role: AGENT_ROLES.SOURCE_HUNTER_B,
       content: `Found ${hunterBMessage.match(/\[[\s\S]*\]/) ? "sources" : "no sources"}`,
-      model: getModelDisplayName(AGENT_ROLES.SOURCE_HUNTER_B),
+      agent: getAgentDisplayName(AGENT_ROLES.SOURCE_HUNTER_B),
       timestamp: new Date(),
     },
   });
@@ -222,7 +222,7 @@ export async function findSources(
         allSources.push({
           ...source,
           hunter: "A",
-          hunterModel: getModelDisplayName(AGENT_ROLES.SOURCE_HUNTER_A),
+          hunterAgent: getAgentDisplayName(AGENT_ROLES.SOURCE_HUNTER_A),
         });
       });
     }
@@ -239,7 +239,7 @@ export async function findSources(
         allSources.push({
           ...source,
           hunter: "B",
-          hunterModel: getModelDisplayName(AGENT_ROLES.SOURCE_HUNTER_B),
+          hunterAgent: getAgentDisplayName(AGENT_ROLES.SOURCE_HUNTER_B),
         });
       });
     }
@@ -258,7 +258,7 @@ export async function findSources(
       title: `Information about: ${text}`,
       snippet: `Knowledge and information related to ${text}`,
       hunter: "A" as const,
-      hunterModel: getModelDisplayName(AGENT_ROLES.SOURCE_HUNTER_A),
+      hunterAgent: getAgentDisplayName(AGENT_ROLES.SOURCE_HUNTER_A),
     }));
   }
 
@@ -295,7 +295,7 @@ export async function critiqueSources(
         data: {
           role: AGENT_ROLES.SOURCE_CRITIC,
           content: `Critiqued: ${source.title}`,
-          model: getModelDisplayName(AGENT_ROLES.SOURCE_CRITIC),
+          agent: getAgentDisplayName(AGENT_ROLES.SOURCE_CRITIC),
           timestamp: new Date(),
         },
       });
@@ -310,7 +310,7 @@ export async function critiqueSources(
         ...source,
         qualityRating: Math.max(1, Math.min(5, qualityRating)) as number,
         critique: critique as string,
-        criticModel: getModelDisplayName(AGENT_ROLES.SOURCE_CRITIC),
+        criticAgent: getAgentDisplayName(AGENT_ROLES.SOURCE_CRITIC),
       });
     } catch (error) {
       console.error(`[Orchestrator] Error critiquing source ${source.title}:`, error);

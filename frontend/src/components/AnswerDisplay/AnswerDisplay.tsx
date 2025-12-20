@@ -4,10 +4,10 @@ interface AnswerDisplayProps {
   answer: string | null;
   sources?: Source[] | undefined;
   agentRole?: string;
-  model?: string;
+  agent?: string;
 }
 
-function AnswerDisplay({ answer, sources, agentRole, model }: AnswerDisplayProps): JSX.Element {
+function AnswerDisplay({ answer, sources, agentRole, agent }: AnswerDisplayProps): JSX.Element {
   if (!answer) {
     return (
       <div className="text-center text-muted-foreground p-md md:p-lg">
@@ -31,9 +31,9 @@ function AnswerDisplay({ answer, sources, agentRole, model }: AnswerDisplayProps
     <div className="bg-card p-md md:p-lg rounded-lg shadow-card">
       <div className="flex items-center gap-sm mb-md">
         <h2 className="text-lg md:text-xl font-bold text-foreground">Research Answer</h2>
-        {agentRole && model && (
+        {agentRole && agent && (
           <span className="text-xs text-muted-foreground">
-            by {agentRole} ({model})
+            by {agentRole} ({agent})
           </span>
         )}
       </div>

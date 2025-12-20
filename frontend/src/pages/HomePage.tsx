@@ -50,7 +50,7 @@ function HomePage(): JSX.Element {
                   answer={session.answer}
                   sources={session.sources}
                   agentRole={session.answerAgentRole}
-                  model={session.answerModel}
+                  agent={session.answerAgent}
                 />
               </section>
             )}

@@ -1,42 +1,77 @@
 import { describe, it, expect } from "vitest";
-import request from "supertest";
+import type { AddressInfo } from "node:net";
+import { createServer } from "node:http";
 import { createApp } from "../../app.js";
 
 const app = createApp();
 
+async function withServer<T>(fn: (baseUrl: string) => Promise<T>): Promise<T> {
+  const server = createServer(app);
+  await new Promise<void>((resolve) => server.listen(0, resolve));
+  const address = server.address() as AddressInfo;
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  try {
+    return await fn(baseUrl);
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      server.close((err) => (err ? reject(err) : resolve()))
+    );
+  }
+}
+
 describe("POST /api/sessions", () => {
   it("creates a session with valid question", async () => {
-    const response = await request(app)
-      .post("/api/sessions")
-      .send({ question: "What are the effects of universal basic income?" })
-      .expect(201);
+    await withServer(async (baseUrl) => {
+      const result = await fetch(`${baseUrl}/api/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: "What are the effects of universal basic income?" }),
+      });
 
-    expect(response.body).toHaveProperty("sessionId");
-    expect(response.body).toHaveProperty("status");
+      expect(result.status).toBe(201);
+      const json = (await result.json()) as Record<string, unknown>;
+      expect(json).toHaveProperty("sessionId");
+      expect(json).toHaveProperty("status");
+    });
   });
 
   it("rejects question that is too short", async () => {
-    const response = await request(app)
-      .post("/api/sessions")
-      .send({ question: "short" })
-      .expect(400);
+    await withServer(async (baseUrl) => {
+      const result = await fetch(`${baseUrl}/api/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: "short" }),
+      });
 
-    expect(response.body).toHaveProperty("error");
+      expect(result.status).toBe(400);
+      const json = (await result.json()) as Record<string, unknown>;
+      expect(json).toHaveProperty("error");
+    });
   });
 
   it("rejects question that is too long", async () => {
     const longQuestion = "a".repeat(1001);
-    const response = await request(app)
-      .post("/api/sessions")
-      .send({ question: longQuestion })
-      .expect(400);
 
-    expect(response.body).toHaveProperty("error");
+    await withServer(async (baseUrl) => {
+      const result = await fetch(`${baseUrl}/api/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: longQuestion }),
+      });
+
+      expect(result.status).toBe(400);
+      const json = (await result.json()) as Record<string, unknown>;
+      expect(json).toHaveProperty("error");
+    });
   });
 });
 
 describe("GET /api/sessions/:sessionId", () => {
   it("returns 404 for non-existent session", async () => {
-    await request(app).get("/api/sessions/invalid-id").expect(404);
+    await withServer(async (baseUrl) => {
+      const result = await fetch(`${baseUrl}/api/sessions/invalid-id`);
+      expect(result.status).toBe(404);
+    });
   });
 });

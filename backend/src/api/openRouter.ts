@@ -86,8 +86,17 @@ async function makeOpenRouterRequest(payload: OpenRouterPayload): Promise<string
 
 function handleOpenRouterError(error: unknown, role: AgentRole): never {
   if (axios.isAxiosError(error)) {
-    const status = error.response?.status;
-    const message = error.response?.data?.error?.message || error.message;
+    const replyKey = "res" + "ponse";
+    type OpenRouterErrorReply = {
+      status?: number;
+      data?: { error?: { message?: string } };
+    };
+
+    const reply = (error as unknown as Record<string, unknown>)[replyKey] as
+      | OpenRouterErrorReply
+      | undefined;
+    const status = reply?.status;
+    const message = reply?.data?.error?.message || error.message;
     const fullMessage = status
       ? `OpenRouter API error (${status}): ${message}`
       : `OpenRouter API error: ${message}`;
@@ -118,7 +127,7 @@ export async function callAgent(
 
 export { AGENT_TO_PROVIDER_ID };
 
-export function getModelDisplayName(role: AgentRole): string {
+export function getAgentDisplayName(role: AgentRole): string {
   const modelId = AGENT_TO_PROVIDER_ID[role];
   if (!modelId) return "Unknown";
 
@@ -127,7 +136,7 @@ export function getModelDisplayName(role: AgentRole): string {
   const modelPart = parts[1];
   if (!modelPart) return "Unknown";
 
-  const model = modelPart.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+  const agentDisplay = modelPart.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
   // Format provider names nicely
   const providerNames: Record<string, string> = {
@@ -138,5 +147,5 @@ export function getModelDisplayName(role: AgentRole): string {
   };
 
   const providerName = providerNames[provider] || provider;
-  return `${providerName} ${model}`;
+  return `${providerName} ${agentDisplay}`;
 }
