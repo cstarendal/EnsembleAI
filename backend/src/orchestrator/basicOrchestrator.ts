@@ -1,16 +1,21 @@
 import { callAgent, getAgentDisplayName } from "../api/openRouter.js";
-import type { Session, ResearchPlan, Source, DebateMessage } from "../types/session.js";
+import type { Session, Context, DebateMessage, SessionParticipant } from "../types/session.js";
 import { AGENT_ROLES, SESSION_STATUS } from "../constants/ubiquitousLanguage.js";
 import { runDebate } from "./debateOrchestrator.js";
 
 export interface OrchestratorEvent {
-  type: "status" | "message" | "plan" | "sources" | "debate" | "answer" | "error";
+  type:
+    | "status"
+    | "message"
+    | "participants"
+    | "debate_message"
+    | "debate"
+    | "conclusion"
+    | "error";
   data: unknown;
 }
 
 export type EventCallback = (event: OrchestratorEvent) => void;
-
-const NOOP_EVENT: EventCallback = () => undefined;
 
 function updateSessionStatus(
   session: Session,
@@ -22,59 +27,94 @@ function updateSessionStatus(
   return updated;
 }
 
-async function executePlanningPhase(
-  session: Session,
-  onEvent: EventCallback
-): Promise<ResearchPlan> {
-  const plan = await createResearchPlan(session.question);
-  onEvent({ type: "plan", data: plan });
-  onEvent({
-    type: "message",
-    data: {
-      role: plan.agentRole || AGENT_ROLES.RESEARCH_PLANNER,
-      content: plan.plan,
-      agent: plan.agent,
-      timestamp: new Date(),
-    },
-  });
-  return plan;
-}
-
-async function executeHuntingPhase(plan: ResearchPlan, onEvent: EventCallback): Promise<Source[]> {
-  const sources = await findSources(plan, onEvent);
-  onEvent({ type: "sources", data: sources });
-  return sources;
-}
-
-async function executeCritiquingPhase(
-  sources: Source[],
-  question: string,
-  onEvent: EventCallback
-): Promise<Source[]> {
-  const critiquedSources = await critiqueSources(sources, question, onEvent);
-  onEvent({ type: "sources", data: critiquedSources });
-  return critiquedSources;
-}
-
 async function executeDebatePhase(
-  question: string,
-  sources: Source[],
+  sessionId: string,
+  topic: string,
+  contexts: Context[],
   onEvent: EventCallback
-): Promise<DebateMessage[]> {
-  const debateMessages = await runDebate(question, sources, onEvent);
-  onEvent({ type: "debate", data: debateMessages });
-  return debateMessages;
+): Promise<{ messages: DebateMessage[]; participants: SessionParticipant[] }> {
+  try {
+    const result = await runDebate(sessionId, topic, contexts, onEvent);
+    onEvent({ type: "debate", data: result.messages });
+    return result;
+  } catch (error) {
+    console.error(`[Orchestrator] Debate round error:`, error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    onEvent({
+      type: "error",
+      data: { error: `Debate round failed: ${errorMessage}` },
+    });
+    throw error; // Re-throw to trigger orchestration error handler
+  }
 }
 
-async function executeSynthesisPhase(
-  question: string,
-  plan: ResearchPlan,
-  sources: Source[],
+async function synthesizeConclusion(
+  topic: string,
+  debateMessages: DebateMessage[],
   onEvent: EventCallback
 ): Promise<string> {
-  const answer = await synthesizeAnswer(question, plan, sources);
-  onEvent({ type: "answer", data: { answer } });
-  return answer;
+  const debateSynthesis = formatDebateSynthesis(debateMessages);
+
+  const messages = [
+    {
+      role: "system" as const,
+      content:
+        "You are a Final Synthesizer. Based on the debate that has occurred, synthesize a clear conclusion that reflects the key arguments, agreements, disagreements, and final positions of all participants.",
+    },
+    {
+      role: "user" as const,
+      content: `Debate Topic: ${topic}\n\nDebate Synthesis:\n${debateSynthesis}\n\nProvide a comprehensive conclusion (3-5 paragraphs) that:\n1. Synthesizes the main positions\n2. Highlights areas of agreement and disagreement\n3. Presents the final collective understanding\n4. Acknowledges remaining uncertainties`,
+    },
+  ];
+
+  const conclusion = await callAgent(AGENT_ROLES.FINAL_SYNTHESIZER, messages);
+  onEvent({ type: "conclusion", data: { conclusion } });
+  return conclusion;
+}
+
+function formatDebateSynthesis(debateMessages: DebateMessage[]): string {
+  const byRound = {
+    pitch: debateMessages.filter((m) => m.round === "pitch"),
+    cross_fire: debateMessages.filter((m) => m.round === "cross_fire"),
+    stress_test: debateMessages.filter((m) => m.round === "stress_test"),
+    steel_man: debateMessages.filter((m) => m.round === "steel_man"),
+    consensus: debateMessages.filter((m) => m.round === "consensus"),
+  };
+
+  let synthesis = "";
+
+  if (byRound.pitch.length > 0) {
+    synthesis += "The Pitch (Round 1):\n";
+    byRound.pitch.forEach((msg) => {
+      synthesis += `- ${msg.role} (${msg.position || "neutral"}): ${msg.content.substring(0, 200)}...\n`;
+    });
+    synthesis += "\n";
+  }
+
+  if (byRound.cross_fire.length > 0) {
+    synthesis += "Cross-Fire (Round 2):\n";
+    byRound.cross_fire.forEach((msg) => {
+      synthesis += `- ${msg.role} → ${msg.target}: ${msg.content.substring(0, 200)}...\n`;
+    });
+    synthesis += "\n";
+  }
+
+  if (byRound.stress_test.length > 0) {
+    synthesis += "Stress Test (Round 3):\n";
+    byRound.stress_test.forEach((msg) => {
+      synthesis += `- ${msg.role}: ${msg.content.substring(0, 200)}...\n`;
+    });
+    synthesis += "\n";
+  }
+
+  if (byRound.consensus.length > 0) {
+    synthesis += "Consensus (Round 5):\n";
+    byRound.consensus.forEach((msg) => {
+      synthesis += `- ${msg.role} (Conf: ${msg.confidenceScore}%): ${msg.content.substring(0, 200)}...\n`;
+    });
+  }
+
+  return synthesis;
 }
 
 function handleOrchestrationError(
@@ -99,32 +139,30 @@ async function executeFullOrchestration(
   session: Session,
   onEvent: EventCallback
 ): Promise<Session> {
-  const session1 = updateSessionStatus(session, SESSION_STATUS.PLANNING, onEvent);
-  console.log(`[Orchestrator] Status updated to PLANNING`);
-  const plan = await executePlanningPhase(session1, onEvent);
-  console.log(`[Orchestrator] Planning round complete`);
+  // Start directly with debate
+  const session1 = updateSessionStatus(session, SESSION_STATUS.DEBATING, onEvent);
+  console.log(`[Orchestrator] Status updated to DEBATING`);
 
-  const session2 = updateSessionStatus(session1, SESSION_STATUS.HUNTING, onEvent);
-  const rawSources = await executeHuntingPhase(plan, onEvent);
-
-  const session3 = updateSessionStatus(session2, SESSION_STATUS.CRITIQUING, onEvent);
-  const sources = await executeCritiquingPhase(rawSources, session3.question, onEvent);
-
-  const session4 = updateSessionStatus(session3, SESSION_STATUS.DEBATING, onEvent);
-  const debate = await executeDebatePhase(session4.question, sources, onEvent);
+  // Run debate with optional contexts
+  const { messages: debate, participants } = await executeDebatePhase(
+    session1.id,
+    session1.topic,
+    session1.contexts || [],
+    onEvent
+  );
   console.log(`[Orchestrator] Debate complete with ${debate.length} messages`);
 
-  const session5 = updateSessionStatus(session4, SESSION_STATUS.FINALIZING, onEvent);
-  const answer = await executeSynthesisPhase(session5.question, plan, sources, onEvent);
+  // Generate conclusion from debate
+  const session2 = updateSessionStatus(session1, SESSION_STATUS.FINALIZING, onEvent);
+  const conclusion = await synthesizeConclusion(session2.topic, debate, onEvent);
 
   const finalSession: Session = {
-    ...session5,
-    plan,
-    sources,
+    ...session2,
+    participants,
     debate,
-    answer,
-    answerAgentRole: AGENT_ROLES.SYNTHESIZER,
-    answerAgent: getAgentDisplayName(AGENT_ROLES.SYNTHESIZER),
+    conclusion,
+    conclusionAgentRole: AGENT_ROLES.FINAL_SYNTHESIZER,
+    conclusionAgent: getAgentDisplayName(AGENT_ROLES.FINAL_SYNTHESIZER),
     status: SESSION_STATUS.COMPLETE,
     updatedAt: new Date(),
   };
@@ -145,222 +183,4 @@ export async function runBasicOrchestration(
   } catch (error) {
     return handleOrchestrationError(error, session.id, currentSession, onEvent);
   }
-}
-
-async function createResearchPlan(question: string): Promise<ResearchPlan> {
-  const messages = [
-    {
-      role: "system" as const,
-      content:
-        "You are a Research Planner. Break down research questions into a structured plan with specific search texts.",
-    },
-    {
-      role: "user" as const,
-      content: `Create a research plan for: ${question}\n\nProvide:\n1. A structured plan (2-3 sentences)\n2. 3-5 specific search texts (one per line, prefixed with "- " )`,
-    },
-  ];
-
-  console.log(`[Orchestrator] Creating research plan for: ${question.substring(0, 50)}...`);
-  const plannerMessage = await callAgent(AGENT_ROLES.RESEARCH_PLANNER, messages);
-  console.log(`[Orchestrator] Research plan created (${plannerMessage.length} chars)`);
-  const lines = plannerMessage.split("\n").filter((line) => line.trim());
-  const planText = lines
-    .filter((line) => !line.startsWith("-"))
-    .join(" ")
-    .trim();
-  const searchTexts = lines
-    .filter((line) => line.startsWith("-"))
-    .map((line) => line.replace(/^-\s*/, "").trim())
-    .filter((text) => text.length > 0);
-
-  return {
-    plan: planText || plannerMessage.substring(0, 200),
-    searchQueries: searchTexts.length > 0 ? searchTexts : [question],
-    agentRole: AGENT_ROLES.RESEARCH_PLANNER,
-    agent: getAgentDisplayName(AGENT_ROLES.RESEARCH_PLANNER),
-  };
-}
-
-export async function findSources(
-  plan: ResearchPlan,
-  onEvent: EventCallback = NOOP_EVENT
-): Promise<Source[]> {
-  const messages = [
-    {
-      role: "system" as const,
-      content:
-        "You are a Source Hunter. Provide relevant information and knowledge from your training data about the research topics. Focus on factual, well-established information. If you know of specific well-known sources, you may include them, but do NOT make up URLs or fake sources. Return a JSON array with title (topic/area), snippet (key information), and optionally url (only if you're certain it's a real, well-known source).",
-    },
-    {
-      role: "user" as const,
-      content: `Provide information about these research topics:\n${plan.searchQueries
-        .map((text) => `- ${text}`)
-        .join(
-          "\n"
-        )}\n\nReturn JSON array: [{"title": "Topic/Area Name", "snippet": "Key information and facts...", "url": "optional - only if real well-known source"}]`,
-    },
-  ];
-
-  // Run both hunters in parallel
-  const [hunterAMessage, hunterBMessage] = await Promise.all([
-    callAgent(AGENT_ROLES.SOURCE_HUNTER_A, messages),
-    callAgent(AGENT_ROLES.SOURCE_HUNTER_B, messages),
-  ]);
-
-  // Emit messages from both hunters
-  onEvent({
-    type: "message",
-    data: {
-      role: AGENT_ROLES.SOURCE_HUNTER_A,
-      content: `Found ${hunterAMessage.match(/\[[\s\S]*\]/) ? "sources" : "no sources"}`,
-      agent: getAgentDisplayName(AGENT_ROLES.SOURCE_HUNTER_A),
-      timestamp: new Date(),
-    },
-  });
-  onEvent({
-    type: "message",
-    data: {
-      role: AGENT_ROLES.SOURCE_HUNTER_B,
-      content: `Found ${hunterBMessage.match(/\[[\s\S]*\]/) ? "sources" : "no sources"}`,
-      agent: getAgentDisplayName(AGENT_ROLES.SOURCE_HUNTER_B),
-      timestamp: new Date(),
-    },
-  });
-
-  const allSources: Source[] = [];
-
-  // Parse Hunter A results
-  try {
-    const jsonMatch = hunterAMessage.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]) as Source[];
-      parsed.slice(0, 6).forEach((source) => {
-        allSources.push({
-          ...source,
-          hunter: "A",
-          hunterAgent: getAgentDisplayName(AGENT_ROLES.SOURCE_HUNTER_A),
-        });
-      });
-    }
-  } catch {
-    // Continue if parsing fails
-  }
-
-  // Parse Hunter B results
-  try {
-    const jsonMatch = hunterBMessage.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]) as Source[];
-      parsed.slice(0, 6).forEach((source) => {
-        allSources.push({
-          ...source,
-          hunter: "B",
-          hunterAgent: getAgentDisplayName(AGENT_ROLES.SOURCE_HUNTER_B),
-        });
-      });
-    }
-  } catch {
-    // Continue if parsing fails
-  }
-
-  // Deduplicate by title (or URL if available) and return up to 8 sources
-  const uniqueSources = Array.from(
-    new Map(allSources.map((s) => [s.url || s.title, s])).values()
-  ).slice(0, 8);
-
-  // Fallback if no sources found - provide knowledge directly
-  if (uniqueSources.length === 0) {
-    return plan.searchQueries.slice(0, 4).map((text) => ({
-      title: `Information about: ${text}`,
-      snippet: `Knowledge and information related to ${text}`,
-      hunter: "A" as const,
-      hunterAgent: getAgentDisplayName(AGENT_ROLES.SOURCE_HUNTER_A),
-    }));
-  }
-
-  return uniqueSources;
-}
-
-export async function critiqueSources(
-  sources: Source[],
-  question: string,
-  onEvent: EventCallback = NOOP_EVENT
-): Promise<Source[]> {
-  console.log(`[Orchestrator] Critiquing ${sources.length} sources`);
-  const critiquedSources: Source[] = [];
-
-  for (const source of sources) {
-    try {
-      const messages = [
-        {
-          role: "system" as const,
-          content:
-            "You are a Source Critic. Evaluate the quality and relevance of research sources. Rate each source on a 1-5 scale and provide a brief critique.",
-        },
-        {
-          role: "user" as const,
-          content: `Research Question: ${question}\n\nSource:\nTitle: ${source.title}${source.url ? `\nURL: ${source.url}` : ""}\nSnippet: ${source.snippet}\n\nProvide:\n1. Quality rating (1-5, where 5 is highest)\n2. Brief critique (2-3 sentences)\n\nFormat: Rating: X\nCritique: ...`,
-        },
-      ];
-
-      const critiqueMessage = await callAgent(AGENT_ROLES.SOURCE_CRITIC, messages);
-
-      // Emit message from critic
-      onEvent({
-        type: "message",
-        data: {
-          role: AGENT_ROLES.SOURCE_CRITIC,
-          content: `Critiqued: ${source.title}`,
-          agent: getAgentDisplayName(AGENT_ROLES.SOURCE_CRITIC),
-          timestamp: new Date(),
-        },
-      });
-      const ratingMatch = critiqueMessage.match(/Rating:\s*(\d)/i);
-      const critiqueMatch = critiqueMessage.match(/Critique:\s*(.+)/is);
-
-      const qualityRating = ratingMatch && ratingMatch[1] ? parseInt(ratingMatch[1], 10) : 3;
-      const critique =
-        critiqueMatch && critiqueMatch[1] ? critiqueMatch[1].trim() : "No critique available";
-
-      critiquedSources.push({
-        ...source,
-        qualityRating: Math.max(1, Math.min(5, qualityRating)) as number,
-        critique: critique as string,
-        criticAgent: getAgentDisplayName(AGENT_ROLES.SOURCE_CRITIC),
-      });
-    } catch (error) {
-      console.error(`[Orchestrator] Error critiquing source ${source.title}:`, error);
-      // Include source without critique if critique fails
-      critiquedSources.push({
-        ...source,
-        qualityRating: 3,
-        critique: "No critique available",
-      });
-    }
-  }
-
-  console.log(`[Orchestrator] Source critique complete`);
-  return critiquedSources;
-}
-
-async function synthesizeAnswer(
-  question: string,
-  plan: ResearchPlan,
-  sources: Source[]
-): Promise<string> {
-  const messages = [
-    {
-      role: "system" as const,
-      content:
-        "You are a Synthesizer. Create a balanced, well-structured answer based on the research plan and sources provided.",
-    },
-    {
-      role: "user" as const,
-      content: `Question: ${question}\n\nPlan: ${plan.plan}\n\nSources:\n${sources
-        .map((s, i) => `${i + 1}. ${s.title}: ${s.snippet}`)
-        .join("\n")}\n\nProvide a comprehensive answer (3-5 paragraphs).`,
-    },
-  ];
-
-  return callAgent(AGENT_ROLES.SYNTHESIZER, messages);
 }

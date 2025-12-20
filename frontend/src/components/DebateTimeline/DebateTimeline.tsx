@@ -1,17 +1,29 @@
-import type { Session, DebateMessage, DebateRoundType } from "../../types/session";
+import type {
+  Session,
+  DebateMessage,
+  DebateRoundType,
+  SessionParticipant,
+} from "../../types/session";
 
 interface DebateTimelineProps {
   session: Session | null;
 }
 
 const ROUND_LABELS: Record<DebateRoundType, string> = {
-  opening: "Opening Statements",
-  cross_exam: "Cross-Examination",
-  rebuttal: "Rebuttal & Refinement",
-  final: "Final Positions",
+  pitch: "Round 1: The Pitch",
+  cross_fire: "Round 2: Cross-Fire (Wildcard)",
+  stress_test: "Round 3: Stress Test",
+  steel_man: "Round 4: Steel Man",
+  consensus: "Round 5: Consensus & Verdict",
 };
 
-const ROUND_ORDER: DebateRoundType[] = ["opening", "cross_exam", "rebuttal", "final"];
+const ROUND_ORDER: DebateRoundType[] = [
+  "pitch",
+  "cross_fire",
+  "stress_test",
+  "steel_man",
+  "consensus",
+];
 
 function getPositionBadge(position?: string): JSX.Element | null {
   if (!position) return null;
@@ -38,6 +50,19 @@ function DebateMessageCard({ message }: { message: DebateMessage }): JSX.Element
           <span className="font-medium text-foreground text-sm">{message.role}</span>
           <span className="text-xs text-muted-foreground">({message.agent})</span>
           {getPositionBadge(message.position)}
+          {message.confidenceScore !== undefined && (
+            <span
+              className={`text-xs px-xs py-xs rounded ${
+                message.confidenceScore > 70
+                  ? "bg-success/20 text-success"
+                  : message.confidenceScore < 40
+                    ? "bg-destructive/20 text-destructive"
+                    : "bg-warning/20 text-warning"
+              }`}
+            >
+              Conf: {message.confidenceScore}%
+            </span>
+          )}
         </div>
         {message.target && message.target !== "all" && (
           <span className="text-xs text-muted-foreground">→ {message.target}</span>
@@ -92,12 +117,142 @@ function DebateRoundSection({
   );
 }
 
+function StatusIndicator({ status }: { status: string }): JSX.Element {
+  const statusColor =
+    status === "complete"
+      ? "bg-success"
+      : status === "error"
+        ? "bg-destructive"
+        : "bg-primary animate-pulse";
+
+  return (
+    <div className="flex items-center gap-md">
+      <div className={`w-3 h-3 rounded-full ${statusColor}`} />
+      <span className="text-sm font-medium text-foreground">Status: {status}</span>
+    </div>
+  );
+}
+
+function ParticipantsSection({
+  participants,
+}: {
+  participants: SessionParticipant[];
+}): JSX.Element {
+  if (participants.length === 0) return <></>;
+
+  return (
+    <div className="bg-card p-sm md:p-md rounded-lg shadow-card">
+      <h3 className="text-sm font-semibold text-foreground mb-sm">
+        Participants ({participants.length})
+      </h3>
+      <div className="space-y-xs">
+        {participants.map((p) => (
+          <div
+            key={p.personaId}
+            className="flex items-start justify-between gap-sm border border-border rounded-md p-sm bg-background"
+          >
+            <div className="min-w-0">
+              <div className="flex items-center gap-sm">
+                <span className="font-medium text-foreground text-sm">{p.role}</span>
+                {p.isWildcard && (
+                  <span className="text-xs px-xs py-xs rounded bg-warning/20 text-warning">
+                    Wildcard
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground truncate">{p.agent}</p>
+              <p className="text-xs text-muted-foreground mt-xs">{p.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InitialContextSection({
+  context,
+}: {
+  context: { context?: string; agentRole?: string; agent?: string };
+}): JSX.Element {
+  if (!context.context) return <></>;
+
+  return (
+    <div className="bg-card p-sm md:p-md rounded-lg shadow-card">
+      <div className="flex items-center gap-sm mb-xs">
+        <h3 className="text-sm font-semibold text-foreground">Initial Context</h3>
+        {context.agentRole && context.agent && (
+          <span className="text-xs text-muted-foreground">
+            by {context.agentRole} ({context.agent})
+          </span>
+        )}
+      </div>
+      <p className="text-sm text-muted-foreground">{context.context}</p>
+    </div>
+  );
+}
+
+function ContextsSection({
+  contexts,
+}: {
+  contexts: Array<{ title: string; url?: string; snippet: string }>;
+}): JSX.Element {
+  if (contexts.length === 0) return <></>;
+
+  return (
+    <div className="bg-card p-sm md:p-md rounded-lg shadow-card">
+      <h3 className="text-sm font-semibold text-foreground mb-sm">Context ({contexts.length})</h3>
+      <div className="space-y-xs">
+        {contexts.map((context, idx) => (
+          <div key={idx} className="text-sm">
+            <span className="font-medium text-foreground">{context.title}</span>
+            {context.url && (
+              <a
+                href={context.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline ml-xs text-xs"
+              >
+                ({context.url})
+              </a>
+            )}
+            <p className="text-xs text-muted-foreground mt-xs">{context.snippet}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AgentActivitySection({
+  messages,
+}: {
+  messages: Array<{ role: string; agent?: string; content: string }>;
+}): JSX.Element {
+  if (messages.length === 0) return <></>;
+
+  return (
+    <div className="bg-card p-sm md:p-md rounded-lg shadow-card">
+      <h3 className="text-sm font-semibold text-foreground mb-sm">Agent Activity</h3>
+      <div className="space-y-xs">
+        {messages.map((msg, idx) => (
+          <div key={idx} className="text-sm">
+            <span className="font-medium text-foreground">{msg.role}</span>
+            {msg.agent && (
+              <span className="text-xs text-muted-foreground ml-xs">({msg.agent})</span>
+            )}
+            <span className="text-muted-foreground">: {msg.content}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function DebateTimeline({ session }: DebateTimelineProps): JSX.Element {
   if (!session) {
     return (
-      <div className="text-center text-muted-foreground p-md md:p-lg">
-        No active research session
-      </div>
+      <div className="text-center text-muted-foreground p-md md:p-lg">No active debate session</div>
     );
   }
 
@@ -114,47 +269,14 @@ function DebateTimeline({ session }: DebateTimelineProps): JSX.Element {
 
   return (
     <div className="space-y-md">
-      {/* Status indicator */}
-      <div className="flex items-center gap-md">
-        <div
-          className={`w-3 h-3 rounded-full ${
-            session.status === "complete"
-              ? "bg-success"
-              : session.status === "error"
-                ? "bg-destructive"
-                : "bg-primary animate-pulse"
-          }`}
-        />
-        <span className="text-sm font-medium text-foreground">Status: {session.status}</span>
-      </div>
-
-      {/* Research Plan */}
-      {session.plan && (
-        <div className="bg-card p-sm md:p-md rounded-lg shadow-card">
-          <div className="flex items-center gap-sm mb-xs">
-            <h3 className="text-sm font-semibold text-foreground">Research Plan</h3>
-            {session.plan.agentRole && session.plan.agent && (
-              <span className="text-xs text-muted-foreground">
-                by {session.plan.agentRole} ({session.plan.agent})
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-muted-foreground">{session.plan.plan}</p>
-          {session.plan.searchQueries.length > 0 && (
-            <ul className="mt-sm list-disc list-inside text-sm text-muted-foreground">
-              {session.plan.searchQueries.map((searchText, idx) => (
-                <li key={idx}>{searchText}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {/* Debate Section */}
+      <StatusIndicator status={session.status} />
+      {session.participants && <ParticipantsSection participants={session.participants} />}
+      {session.context && <InitialContextSection context={session.context} />}
+      {session.contexts && <ContextsSection contexts={session.contexts} />}
       {hasDebate && (
         <div className="bg-card p-sm md:p-md rounded-lg shadow-card">
           <h3 className="text-base font-semibold text-foreground mb-md">
-            Debate ({session.debate?.length} messages)
+            Debate Arena ({session.debate?.length} messages)
           </h3>
           <div className="space-y-lg">
             {ROUND_ORDER.map(
@@ -166,24 +288,7 @@ function DebateTimeline({ session }: DebateTimelineProps): JSX.Element {
           </div>
         </div>
       )}
-
-      {/* Agent Messages (non-debate) */}
-      {session.messages.length > 0 && (
-        <div className="bg-card p-sm md:p-md rounded-lg shadow-card">
-          <h3 className="text-sm font-semibold text-foreground mb-sm">Agent Activity</h3>
-          <div className="space-y-xs">
-            {session.messages.map((msg, idx) => (
-              <div key={idx} className="text-sm">
-                <span className="font-medium text-foreground">{msg.role}</span>
-                {msg.agent && (
-                  <span className="text-xs text-muted-foreground ml-xs">({msg.agent})</span>
-                )}
-                <span className="text-muted-foreground">: {msg.content}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <AgentActivitySection messages={session.messages} />
     </div>
   );
 }

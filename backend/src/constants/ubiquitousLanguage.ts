@@ -1,23 +1,14 @@
-/**
- * Ubiquitous Language Registry (Backend)
- *
- * All domain terms must be defined here and used consistently
- * across code, API, documentation, and responses.
- *
- * See docs/UBIQUITOUS_LANGUAGE.md for usage guidelines.
- */
-
 // Core Domain Concepts
 export const DOMAIN_TERMS = {
-  RESEARCH: "Research",
-  QUESTION: "Question",
+  TOPIC: "Topic",
   SESSION: "Session",
   AGENT: "Agent",
   ROLE: "Role",
   DEBATE: "Debate",
   ROUND: "Round",
-  SOURCE: "Source",
+  CONTEXT: "Context",
   SYNTHESIS: "Synthesis",
+  CONCLUSION: "Conclusion",
   MODERATION: "Moderation",
   TIMELINE: "Timeline",
   MESSAGE: "Message",
@@ -29,29 +20,22 @@ export const DOMAIN_TERMS = {
   DISAGREEMENT: "Disagreement",
   UNCERTAINTY: "Uncertainty",
   CITATION: "Citation",
-  QUALITY_RATING: "Quality Rating",
-  RESEARCH_AREA: "Research Area",
-  SEARCH_QUERY: "Search Query",
 } as const;
 
 // Agent Roles
 export const AGENT_ROLES = {
-  RESEARCH_PLANNER: "Research Planner",
-  SOURCE_HUNTER_A: "Source Hunter A",
-  SOURCE_HUNTER_B: "Source Hunter B",
-  SOURCE_CRITIC: "Source Critic",
   SYNTHESIZER: "Synthesizer",
   SKEPTIC: "Skeptic",
   MODERATOR: "Moderator",
   FINAL_SYNTHESIZER: "Final Synthesizer",
+  // Keep SOURCE_CRITIC for now as it's used in debate participants
+  SOURCE_CRITIC: "Source Critic",
+  WILDCARD: "Wildcard",
 } as const;
 
 // Session Status
 export const SESSION_STATUS = {
   IDLE: "idle",
-  PLANNING: "planning",
-  HUNTING: "hunting",
-  CRITIQUING: "critiquing",
   DEBATING: "debating",
   MODERATING: "moderating",
   FINALIZING: "finalizing",
@@ -61,10 +45,11 @@ export const SESSION_STATUS = {
 
 // Debate Round Types
 export const DEBATE_ROUND_TYPES = {
-  OPENING: "opening",
-  CROSS_EXAM: "cross_exam",
-  REBUTTAL: "rebuttal",
-  FINAL: "final",
+  PITCH: "pitch",
+  CROSS_FIRE: "cross_fire",
+  STRESS_TEST: "stress_test",
+  STEEL_MAN: "steel_man",
+  CONSENSUS: "consensus",
 } as const;
 
 // Type Definitions

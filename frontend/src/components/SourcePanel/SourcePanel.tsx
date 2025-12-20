@@ -1,7 +1,7 @@
-import type { Source } from "../../types/session";
+import type { Context } from "../../types/session";
 
 interface SourcePanelProps {
-  sources: Source[];
+  sources: Context[];
 }
 
 function SourcePanel({ sources }: SourcePanelProps): JSX.Element {
@@ -38,48 +38,9 @@ function SourcePanel({ sources }: SourcePanelProps): JSX.Element {
                     {source.title}
                   </span>
                 )}
-                {source.hunter && (
-                  <span className="ml-sm text-xs text-muted-foreground">
-                    (Hunter {source.hunter}
-                    {source.hunterAgent && ` - ${source.hunterAgent}`})
-                  </span>
-                )}
               </div>
-              {source.qualityRating && (
-                <div className="flex items-center gap-xs">
-                  <span className="text-xs text-muted-foreground">Quality:</span>
-                  <div className="flex gap-xs">
-                    {[1, 2, 3, 4, 5].map((rating) => (
-                      <span
-                        key={rating}
-                        className={`text-sm ${
-                          rating <= source.qualityRating! ? "text-warning" : "text-muted-foreground"
-                        }`}
-                      >
-                        ★
-                      </span>
-                    ))}
-                  </div>
-                  <span className="text-xs text-muted-foreground ml-xs">
-                    {source.qualityRating}/5
-                  </span>
-                </div>
-              )}
             </div>
             <p className="text-sm text-muted-foreground mb-sm">{source.snippet}</p>
-            {source.critique && (
-              <div className="mt-sm pt-sm border-t border-border">
-                <div className="flex items-center gap-xs mb-xs">
-                  <p className="text-xs font-medium text-foreground">Critique:</p>
-                  {source.criticAgent && (
-                    <span className="text-xs text-muted-foreground">
-                      (Source Critic - {source.criticAgent})
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">{source.critique}</p>
-              </div>
-            )}
           </div>
         ))}
       </div>

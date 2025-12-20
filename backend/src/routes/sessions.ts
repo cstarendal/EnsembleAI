@@ -1,13 +1,7 @@
 import express from "express";
 import { z } from "zod";
 import { runBasicOrchestration } from "../orchestrator/basicOrchestrator.js";
-import type {
-  Session,
-  ResearchPlan,
-  Source,
-  AgentMessage,
-  DebateMessage,
-} from "../types/session.js";
+import type { Session, AgentMessage, DebateMessage } from "../types/session.js";
 import { SESSION_STATUS } from "../constants/ubiquitousLanguage.js";
 import type { OrchestratorEvent } from "../orchestrator/basicOrchestrator.js";
 
@@ -18,8 +12,17 @@ const sessions = new Map<string, Session>();
 type SseSend = (event: string, data: unknown) => void;
 const subscribers = new Map<string, Set<SseSend>>();
 
-const questionSchema = z.object({
-  question: z.string().min(10).max(1000),
+const topicSchema = z.object({
+  topic: z.string().min(10).max(1000),
+  contexts: z
+    .array(
+      z.object({
+        title: z.string(),
+        url: z.string().optional(),
+        snippet: z.string(),
+      })
+    )
+    .optional(),
 });
 
 function createSessionId(): string {
@@ -53,16 +56,8 @@ function applyEventToSession(session: Session, event: OrchestratorEvent): Sessio
     updated.status = status;
   }
 
-  if (event.type === "plan") {
-    updated.plan = event.data as ResearchPlan;
-  }
-
-  if (event.type === "sources") {
-    updated.sources = event.data as Source[];
-  }
-
-  if (event.type === "answer") {
-    updated.answer = (event.data as { answer: string }).answer;
+  if (event.type === "conclusion") {
+    updated.conclusion = (event.data as { conclusion: string }).conclusion;
   }
 
   if (event.type === "message") {
@@ -70,8 +65,17 @@ function applyEventToSession(session: Session, event: OrchestratorEvent): Sessio
     updated.messages = [...(updated.messages || []), message];
   }
 
+  if (event.type === "debate_message") {
+    const msg = event.data as DebateMessage;
+    updated.debate = [...(updated.debate || []), msg];
+  }
+
   if (event.type === "debate") {
     updated.debate = event.data as DebateMessage[];
+  }
+
+  if (event.type === "participants") {
+    updated.participants = event.data as Session["participants"];
   }
 
   return updated;
@@ -94,7 +98,9 @@ function startOrchestrationInBackground(sessionId: string, session: Session): vo
       `[Sessions] Event ${event.type} applied to session ${sessionId}, status: ${updated.status}`
     );
 
-    publish(sessionId, event.type, event.data);
+    const sseEventName = event.type === "error" ? "orchestrator_error" : event.type;
+
+    publish(sessionId, sseEventName, event.data);
 
     if (updated.status === SESSION_STATUS.COMPLETE) {
       publish(sessionId, "complete", { status: updated.status });
@@ -113,20 +119,21 @@ function startOrchestrationInBackground(sessionId: string, session: Session): vo
     if (!current) return;
     const updated: Session = { ...current, status: SESSION_STATUS.ERROR, updatedAt: new Date() };
     sessions.set(sessionId, updated);
-    publish(sessionId, "error", { error: "Orchestration failed" });
+    publish(sessionId, "orchestrator_error", { error: "Orchestration failed" });
     publish(sessionId, "complete", { status: updated.status });
   });
 }
 
 router.post("/", (req, res) => {
   try {
-    const parsed = questionSchema.parse(req.body);
+    const parsed = topicSchema.parse(req.body);
     const sessionId = createSessionId();
 
     const session: Session = {
       id: sessionId,
-      question: parsed.question,
+      topic: parsed.topic,
       status: SESSION_STATUS.IDLE,
+      contexts: parsed.contexts,
       messages: [],
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -167,9 +174,13 @@ router.get("/:sessionId/stream", (req, res) => {
 
   // initial snapshot
   send("status", { status: session.status });
-  if (session.plan) send("plan", session.plan);
-  if (session.sources) send("sources", session.sources);
-  if (session.answer) send("answer", { answer: session.answer });
+  if (session.context) send("context", session.context);
+  if (session.contexts) send("contexts", session.contexts);
+  if (session.participants) send("participants", session.participants);
+  if (session.debate) {
+    session.debate.forEach((msg) => send("debate_message", msg));
+  }
+  if (session.conclusion) send("conclusion", { conclusion: session.conclusion });
 
   const unsubscribe = subscribe(sessionId, send);
 

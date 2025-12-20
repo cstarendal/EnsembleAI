@@ -1,41 +1,41 @@
 import { useCallback, useState, type ChangeEvent, type FormEvent } from "react";
 import { createSession } from "../services/apiService";
 
-export interface UseResearchQuestionControllerParams {
+export interface UseDebateTopicControllerParams {
   onSubmit?: (sessionId: string) => void;
 }
 
-export interface UseResearchQuestionControllerResult {
-  question: string;
+export interface UseDebateTopicControllerResult {
+  topic: string;
   error: string | null;
   isSubmitting: boolean;
   handleChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
   handleSubmit: (e: FormEvent<HTMLFormElement>) => Promise<void>;
 }
 
-function validateQuestion(value: string): string | null {
+function validateTopic(value: string): string | null {
   if (!value.trim()) {
-    return "Question is required";
+    return "Topic is required";
   }
   if (value.length < 10) {
-    return "Question must be at least 10 characters";
+    return "Topic must be at least 10 characters";
   }
   if (value.length > 1000) {
-    return "Question must be at most 1000 characters";
+    return "Topic must be at most 1000 characters";
   }
   return null;
 }
 
-export function useResearchQuestionController(
-  params: UseResearchQuestionControllerParams
-): UseResearchQuestionControllerResult {
+export function useDebateTopicController(
+  params: UseDebateTopicControllerParams
+): UseDebateTopicControllerResult {
   const { onSubmit } = params;
-  const [question, setQuestion] = useState("");
+  const [topic, setTopic] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>): void => {
-    setQuestion(e.target.value);
+    setTopic(e.target.value);
     setError(null);
   }, []);
 
@@ -44,7 +44,7 @@ export function useResearchQuestionController(
       e.preventDefault();
       setError(null);
 
-      const validationError = validateQuestion(question);
+      const validationError = validateTopic(topic);
       if (validationError) {
         setError(validationError);
         return;
@@ -52,17 +52,17 @@ export function useResearchQuestionController(
 
       setIsSubmitting(true);
       try {
-        const { sessionId } = await createSession(question.trim());
+        const { sessionId } = await createSession(topic.trim());
         onSubmit?.(sessionId);
-        setQuestion("");
+        setTopic("");
       } catch {
-        setError("Failed to start research session");
+        setError("Failed to start debate session");
       } finally {
         setIsSubmitting(false);
       }
     },
-    [onSubmit, question]
+    [onSubmit, topic]
   );
 
-  return { question, error, isSubmitting, handleChange, handleSubmit };
+  return { topic, error, isSubmitting, handleChange, handleSubmit };
 }

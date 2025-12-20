@@ -6,7 +6,7 @@ vi.mock("../../services/apiService", () => ({
   createSession: vi.fn(),
 }));
 
-import { useResearchQuestionController } from "../useResearchQuestionController";
+import { useDebateTopicController } from "../useDebateTopicController";
 import { createSession } from "../../services/apiService";
 
 function makeSubmitEvent(): FormEvent<HTMLFormElement> {
@@ -17,24 +17,24 @@ function makeChangeEvent(value: string): ChangeEvent<HTMLTextAreaElement> {
   return { target: { value } } as unknown as ChangeEvent<HTMLTextAreaElement>;
 }
 
-describe("useResearchQuestionController", () => {
+describe("useDebateTopicController", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("validates question is required", async () => {
-    const { result } = renderHook(() => useResearchQuestionController({}));
+    const { result } = renderHook(() => useDebateTopicController({}));
 
     await act(async () => {
       await result.current.handleSubmit(makeSubmitEvent());
     });
 
-    expect(result.current.error).toBe("Question is required");
+    expect(result.current.error).toBe("Topic is required");
     expect(createSession).not.toHaveBeenCalled();
   });
 
   it("validates question minimum length", async () => {
-    const { result } = renderHook(() => useResearchQuestionController({}));
+    const { result } = renderHook(() => useDebateTopicController({}));
 
     act(() => {
       result.current.handleChange(makeChangeEvent("ab"));
@@ -44,12 +44,12 @@ describe("useResearchQuestionController", () => {
       await result.current.handleSubmit(makeSubmitEvent());
     });
 
-    expect(result.current.error).toBe("Question must be at least 10 characters");
+    expect(result.current.error).toBe("Topic must be at least 10 characters");
     expect(createSession).not.toHaveBeenCalled();
   });
 
   it("validates question maximum length", async () => {
-    const { result } = renderHook(() => useResearchQuestionController({}));
+    const { result } = renderHook(() => useDebateTopicController({}));
 
     act(() => {
       result.current.handleChange(makeChangeEvent("a".repeat(1001)));
@@ -59,7 +59,7 @@ describe("useResearchQuestionController", () => {
       await result.current.handleSubmit(makeSubmitEvent());
     });
 
-    expect(result.current.error).toBe("Question must be at most 1000 characters");
+    expect(result.current.error).toBe("Topic must be at most 1000 characters");
     expect(createSession).not.toHaveBeenCalled();
   });
 
@@ -69,7 +69,7 @@ describe("useResearchQuestionController", () => {
       sessionId: "test-session-123",
     });
 
-    const { result } = renderHook(() => useResearchQuestionController({ onSubmit }));
+    const { result } = renderHook(() => useDebateTopicController({ onSubmit }));
 
     act(() => {
       result.current.handleChange(
@@ -83,7 +83,7 @@ describe("useResearchQuestionController", () => {
 
     expect(createSession).toHaveBeenCalledWith("What are the effects of universal basic income?");
     expect(onSubmit).toHaveBeenCalledWith("test-session-123");
-    expect(result.current.question).toBe("");
+    expect(result.current.topic).toBe("");
   });
 
   it("sets isSubmitting while request is in flight", async () => {
@@ -95,7 +95,7 @@ describe("useResearchQuestionController", () => {
 
     (createSession as unknown as ReturnType<typeof vi.fn>).mockReturnValue(pending);
 
-    const { result } = renderHook(() => useResearchQuestionController({ onSubmit }));
+    const { result } = renderHook(() => useDebateTopicController({ onSubmit }));
 
     act(() => {
       result.current.handleChange(
@@ -122,7 +122,7 @@ describe("useResearchQuestionController", () => {
   it("sets user-friendly error message on API failure", async () => {
     (createSession as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("fail"));
 
-    const { result } = renderHook(() => useResearchQuestionController({}));
+    const { result } = renderHook(() => useDebateTopicController({}));
 
     act(() => {
       result.current.handleChange(
@@ -134,6 +134,6 @@ describe("useResearchQuestionController", () => {
       await result.current.handleSubmit(makeSubmitEvent());
     });
 
-    expect(result.current.error).toBe("Failed to start research session");
+    expect(result.current.error).toBe("Failed to start debate session");
   });
 });

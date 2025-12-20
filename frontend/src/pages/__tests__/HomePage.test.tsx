@@ -1,7 +1,7 @@
 import { render, screen, waitFor, fireEvent, act } from "../../test/testUtils";
 import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import HomePage from "../HomePage";
-import { useResearchStore } from "../../stores/researchStore";
+import { useDebateStore } from "../../stores/debateStore";
 
 class MockEventSource {
   public url: string;
@@ -40,7 +40,7 @@ describe("HomePage", () => {
   let lastEventSource: MockEventSource | null = null;
 
   beforeEach(() => {
-    useResearchStore.getState().clearSession();
+    useDebateStore.getState().clearSession();
 
     mockFetch = vi.fn();
     globalThis.fetch = mockFetch as unknown as typeof fetch;
@@ -58,15 +58,15 @@ describe("HomePage", () => {
     lastEventSource = null;
   });
 
-  it("renders the start research form initially", () => {
+  it("renders the start debate form initially", () => {
     render(<HomePage />);
-    expect(screen.getByRole("heading", { name: /start research/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /start research/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /start debate/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /start debate/i })).toBeInTheDocument();
   });
 
-  it("submits a question and renders timeline + answer when session data is available", async () => {
+  it("submits a topic and renders timeline + conclusion when session data is available", async () => {
     const sessionId = "test-session-1";
-    const answerText = "This is the final answer.";
+    const conclusionText = "This is the final conclusion.";
 
     mockFetch.mockImplementation(async (input: RequestInfo, init?: RequestInit) => {
       const url = String(input);
@@ -85,10 +85,10 @@ describe("HomePage", () => {
           status: 200,
           json: async () => ({
             id: sessionId,
-            question: "What is the impact of policy X?",
+            topic: "What is the impact of policy X?",
             status: "complete",
             messages: [],
-            answer: answerText,
+            conclusion: conclusionText,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           }),
@@ -104,9 +104,9 @@ describe("HomePage", () => {
 
     render(<HomePage />);
 
-    const textarea = screen.getByLabelText(/research question/i);
+    const textarea = screen.getByLabelText(/debate topic/i);
     fireEvent.change(textarea, { target: { value: "What is the impact of policy X?" } });
-    fireEvent.click(screen.getByRole("button", { name: /start research/i }));
+    fireEvent.click(screen.getByRole("button", { name: /start debate/i }));
 
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith(
@@ -118,9 +118,9 @@ describe("HomePage", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /research timeline/i })).toBeInTheDocument();
-      expect(screen.getByRole("heading", { name: /research answer/i })).toBeInTheDocument();
-      expect(screen.getByText(answerText)).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /debate timeline/i })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /debate conclusion/i })).toBeInTheDocument();
+      expect(screen.getByText(conclusionText)).toBeInTheDocument();
     });
 
     // Ensure we wired up SSE subscription for the session.

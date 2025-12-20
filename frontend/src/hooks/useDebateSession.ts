@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { Session } from "../types/session";
 import { getSession, getSessionStream } from "../services/apiService";
 
-export function useResearchSession(sessionId: string | null): {
+export function useDebateSession(sessionId: string | null): {
   session: Session | null;
   isLoading: boolean;
   error: string | null;
@@ -36,15 +36,33 @@ export function useResearchSession(sessionId: string | null): {
       fetchSession(sessionId).then(setSession).catch(handleFetchError);
     });
 
-    eventSource.addEventListener("plan", () => {
+    eventSource.addEventListener("context", () => {
       fetchSession(sessionId).then(setSession).catch(handleFetchError);
     });
 
-    eventSource.addEventListener("sources", () => {
+    eventSource.addEventListener("contexts", () => {
       fetchSession(sessionId).then(setSession).catch(handleFetchError);
     });
 
-    eventSource.addEventListener("answer", () => {
+    eventSource.addEventListener("participants", () => {
+      fetchSession(sessionId).then(setSession).catch(handleFetchError);
+    });
+
+    eventSource.addEventListener("debate_message", () => {
+      fetchSession(sessionId).then(setSession).catch(handleFetchError);
+    });
+
+    eventSource.addEventListener("orchestrator_error", (evt) => {
+      try {
+        const msg = JSON.parse((evt as MessageEvent).data as string) as { error?: string };
+        setError(msg.error || "Orchestration error");
+      } catch {
+        setError("Orchestration error");
+      }
+      fetchSession(sessionId).then(setSession).catch(handleFetchError);
+    });
+
+    eventSource.addEventListener("conclusion", () => {
       fetchSession(sessionId).then(setSession).catch(handleFetchError);
     });
 

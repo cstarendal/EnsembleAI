@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Session } from "../types/session";
 
-interface ResearchStoreState {
+interface DebateStoreState {
   sessionId: string | null;
   session: Session | null;
   setSessionId: (sessionId: string | null) => void;
@@ -9,7 +9,7 @@ interface ResearchStoreState {
   clearSession: () => void;
 }
 
-export const useResearchStore = create<ResearchStoreState>((set) => ({
+export const useDebateStore = create<DebateStoreState>((set) => ({
   sessionId: null,
   session: null,
   setSessionId: (sessionId) => set({ sessionId }),

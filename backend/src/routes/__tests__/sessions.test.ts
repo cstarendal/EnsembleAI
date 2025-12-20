@@ -21,12 +21,12 @@ async function withServer<T>(fn: (baseUrl: string) => Promise<T>): Promise<T> {
 }
 
 describe("POST /api/sessions", () => {
-  it("creates a session with valid question", async () => {
+  it("creates a session with valid topic", async () => {
     await withServer(async (baseUrl) => {
       const result = await fetch(`${baseUrl}/api/sessions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: "What are the effects of universal basic income?" }),
+        body: JSON.stringify({ topic: "What are the effects of universal basic income?" }),
       });
 
       expect(result.status).toBe(201);
@@ -36,12 +36,12 @@ describe("POST /api/sessions", () => {
     });
   });
 
-  it("rejects question that is too short", async () => {
+  it("rejects topic that is too short", async () => {
     await withServer(async (baseUrl) => {
       const result = await fetch(`${baseUrl}/api/sessions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: "short" }),
+        body: JSON.stringify({ topic: "short" }),
       });
 
       expect(result.status).toBe(400);
@@ -50,14 +50,14 @@ describe("POST /api/sessions", () => {
     });
   });
 
-  it("rejects question that is too long", async () => {
-    const longQuestion = "a".repeat(1001);
+  it("rejects topic that is too long", async () => {
+    const longTopic = "a".repeat(1001);
 
     await withServer(async (baseUrl) => {
       const result = await fetch(`${baseUrl}/api/sessions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: longQuestion }),
+        body: JSON.stringify({ topic: longTopic }),
       });
 
       expect(result.status).toBe(400);

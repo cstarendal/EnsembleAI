@@ -1,25 +1,19 @@
 import type { SessionStatus } from "../constants/ubiquitousLanguage.js";
 
-export interface ResearchQuestion {
-  question: string;
+export interface DebateTopic {
+  topic: string;
 }
 
-export interface ResearchPlan {
-  plan: string;
-  searchQueries: string[];
-  agentRole?: string; // "Research Planner"
-  agent?: string; // Display name of the agent (e.g., "GPT 4o Mini")
+export interface InitialContext {
+  context?: string; // Optional background/context for the debate
+  agentRole?: string;
+  agent?: string;
 }
 
-export interface Source {
+export interface Context {
   title: string;
   url?: string; // Optional - may not have URL if from training data
   snippet: string;
-  qualityRating?: number; // 1-5 scale
-  critique?: string; // Source Critic's research notes
-  hunter?: "A" | "B"; // Which hunter found this source
-  hunterAgent?: string; // Display name of the hunter agent
-  criticAgent?: string; // Display name of the critic agent
 }
 
 export interface AgentMessage {
@@ -29,34 +23,47 @@ export interface AgentMessage {
   timestamp: Date;
 }
 
-export type DebateRoundType = "opening" | "cross_exam" | "rebuttal" | "final";
+export type DebateRoundType = "pitch" | "cross_fire" | "stress_test" | "steel_man" | "consensus";
 export type DebatePosition = "for" | "against" | "neutral" | "mixed";
 
 export interface DebateMessage {
   id: string;
   role: string; // Agent role (e.g., "Synthesizer", "Skeptic", "Source Critic")
+  personaId?: string; // ID of the specific persona (e.g. "visionary")
   agent: string; // Display name of the agent
   round: DebateRoundType;
-  roundNumber: number; // 3-6 in the full flow
+  roundNumber: number; // 1-5 in the full flow
   target?: string; // Who the message is directed to (agent role or "all")
   content: string;
   position?: DebatePosition;
   keyPoints?: string[]; // Main arguments/points
   revisions?: string; // What changed from previous round
+  confidenceScore?: number; // 0-100 score for consensus
   timestamp: Date;
+}
+
+export interface SessionParticipant {
+  personaId: string;
+  name: string;
+  role: string;
+  description: string;
+  providerId: string;
+  agent: string; // Display label including provider identity
+  isWildcard: boolean;
 }
 
 export interface Session {
   id: string;
-  question: string;
+  topic: string;
   status: SessionStatus;
-  plan?: ResearchPlan;
-  sources?: Source[];
+  context?: InitialContext; // Optional initial context
+  contexts?: Context[]; // Optional contexts for the debate
   messages: AgentMessage[];
+  participants?: SessionParticipant[]; // The specific participants selected for this session
   debate?: DebateMessage[]; // Structured debate messages
-  answer?: string;
-  answerAgentRole?: string; // "Synthesizer"
-  answerAgent?: string; // Display name of the agent that generated the answer
+  conclusion?: string;
+  conclusionAgentRole?: string; // "Final Synthesizer"
+  conclusionAgent?: string; // Display name of the agent that generated the conclusion
   createdAt: Date;
   updatedAt: Date;
 }

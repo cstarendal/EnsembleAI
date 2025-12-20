@@ -5,7 +5,7 @@ import App from "./App";
 describe("App", () => {
   it("renders without crashing", () => {
     render(<App />);
-    const heading = screen.getByText(/Ensemble AI Research System/i);
+    const heading = screen.getByText(/Ensemble AI Debate System/i);
     expect(heading).toBeDefined();
   });
 });

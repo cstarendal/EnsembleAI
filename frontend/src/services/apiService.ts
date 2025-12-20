@@ -1,4 +1,4 @@
-import type { Session } from "../types/session";
+import type { Session, Context } from "../types/session";
 
 export interface CreateSessionResponse {
   sessionId: string;
@@ -17,11 +17,14 @@ async function parseJsonOrThrow<T>(result: JsonHttpResult): Promise<T> {
   return (await result.json()) as T;
 }
 
-export async function createSession(question: string): Promise<CreateSessionResponse> {
+export async function createSession(
+  topic: string,
+  contexts?: Context[]
+): Promise<CreateSessionResponse> {
   const result = await fetch("/api/sessions", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({ topic, contexts }),
   });
   return parseJsonOrThrow<CreateSessionResponse>(result);
 }

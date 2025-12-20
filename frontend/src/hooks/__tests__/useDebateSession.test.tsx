@@ -7,7 +7,7 @@ vi.mock("../../services/apiService", () => ({
   getSessionStream: vi.fn(),
 }));
 
-import { useResearchSession } from "../useResearchSession";
+import { useDebateSession } from "../useDebateSession";
 import { getSession, getSessionStream } from "../../services/apiService";
 
 class MockEventSource {
@@ -39,13 +39,13 @@ class MockEventSource {
   }
 }
 
-describe("useResearchSession", () => {
+describe("useDebateSession", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("returns null session when sessionId is null", () => {
-    const { result } = renderHook(() => useResearchSession(null));
+    const { result } = renderHook(() => useDebateSession(null));
     expect(result.current.session).toBeNull();
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBeNull();
@@ -57,8 +57,8 @@ describe("useResearchSession", () => {
     const sessionId = "s-1";
     const session: Session = {
       id: sessionId,
-      question: "Test question",
-      status: "planning",
+      topic: "Test topic",
+      status: "debating",
       messages: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -68,7 +68,7 @@ describe("useResearchSession", () => {
     (getSessionStream as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockStream);
     (getSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(session);
 
-    const { result } = renderHook(() => useResearchSession(sessionId));
+    const { result } = renderHook(() => useDebateSession(sessionId));
 
     await waitFor(() => {
       expect(result.current.session?.id).toBe(sessionId);
@@ -83,8 +83,8 @@ describe("useResearchSession", () => {
     const sessionId = "s-2";
     const session: Session = {
       id: sessionId,
-      question: "Test question",
-      status: "planning",
+      topic: "Test topic",
+      status: "debating",
       messages: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -94,7 +94,7 @@ describe("useResearchSession", () => {
     (getSessionStream as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockStream);
     (getSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(session);
 
-    const { result } = renderHook(() => useResearchSession(sessionId));
+    const { result } = renderHook(() => useDebateSession(sessionId));
 
     await waitFor(() => {
       expect(result.current.session?.id).toBe(sessionId);
@@ -115,8 +115,8 @@ describe("useResearchSession", () => {
     const sessionId = "s-3";
     const session: Session = {
       id: sessionId,
-      question: "Test question",
-      status: "planning",
+      topic: "Test topic",
+      status: "debating",
       messages: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -126,7 +126,7 @@ describe("useResearchSession", () => {
     (getSessionStream as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockStream);
     (getSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(session);
 
-    const { unmount } = renderHook(() => useResearchSession(sessionId));
+    const { unmount } = renderHook(() => useDebateSession(sessionId));
 
     await waitFor(() => {
       expect(getSession).toHaveBeenCalledWith(sessionId);
@@ -142,7 +142,7 @@ describe("useResearchSession", () => {
     (getSessionStream as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockStream);
     (getSession as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Boom"));
 
-    const { result } = renderHook(() => useResearchSession(sessionId));
+    const { result } = renderHook(() => useDebateSession(sessionId));
 
     await waitFor(() => {
       expect(result.current.error).toBe("Boom");

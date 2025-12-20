@@ -1,17 +1,55 @@
-import { callAgent, getAgentDisplayName } from "../api/openRouter.js";
-import type { DebateMessage, Source } from "../types/session.js";
-import { AGENT_ROLES, DEBATE_ROUND_TYPES } from "../constants/ubiquitousLanguage.js";
-import type { AgentRole } from "../constants/ubiquitousLanguage.js";
+import {
+  callAgent,
+  callProvider,
+  getAgentDisplayName,
+  getAgentLabel,
+  selectProviderIdForPersona,
+} from "../api/openRouter.js";
+import type { DebateMessage, Context, SessionParticipant } from "../types/session.js";
+import { DEBATE_ROUND_TYPES } from "../constants/ubiquitousLanguage.js";
 import type { EventCallback } from "./basicOrchestrator.js";
+import { PERSONA_POOL, type Persona } from "../constants/personas.js";
 
-// Debate participants
-const DEBATE_PARTICIPANTS = [
-  AGENT_ROLES.SOURCE_CRITIC,
-  AGENT_ROLES.SYNTHESIZER,
-  AGENT_ROLES.SKEPTIC,
-] as const;
+interface AssignedParticipant {
+  persona: Persona;
+  providerId: string;
+  agent: string;
+  isWildcard: boolean;
+}
 
-type DebateParticipant = (typeof DEBATE_PARTICIPANTS)[number];
+function hashToUint32(text: string): number {
+  // FNV-1a 32-bit
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function createRng(seed: string): () => number {
+  // Mulberry32
+  let t = hashToUint32(seed) >>> 0;
+  return () => {
+    t += 0x6d2b79f5;
+    let x = t;
+    x = Math.imul(x ^ (x >>> 15), x | 1);
+    x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function shuffleWithSeed<T>(array: T[], seed: string): T[] {
+  const rng = createRng(seed);
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    const tmp = newArray[i]!;
+    newArray[i] = newArray[j]!;
+    newArray[j] = tmp;
+  }
+  return newArray;
+}
 
 let debateMessageCounter = 0;
 
@@ -20,304 +58,587 @@ function createDebateMessageId(): string {
   return `debate-${Date.now()}-${debateMessageCounter}`;
 }
 
-function getAgenda(role: DebateParticipant): string {
-  const agendas: Record<DebateParticipant, string> = {
-    [AGENT_ROLES.SOURCE_CRITIC]:
-      "You are 'The Rigorous Analyst'. Focus on methodology, source quality, and potential bias. Be analytical and demanding.",
-    [AGENT_ROLES.SYNTHESIZER]:
-      "You are 'The Balanced Synthesizer'. Find consensus and balance perspectives. Be balanced and inclusive.",
-    [AGENT_ROLES.SKEPTIC]:
-      "You are 'The Challenger'. Question assumptions and find gaps in reasoning. Be challenging and critical.",
-  };
-  return agendas[role];
-}
-
-function formatSourcesContext(sources: Source[]): string {
-  return sources
-    .map(
-      (s, i) =>
-        `${i + 1}. ${s.title} (Quality: ${s.qualityRating || "N/A"}/5)\n   ${s.snippet}\n   ${s.critique ? `Critique: ${s.critique}` : ""}`
-    )
+function formatContextsContext(contexts: Context[]): string {
+  return contexts
+    .map((c, i) => `${i + 1}. ${c.title}${c.url ? ` (${c.url})` : ""}\n   ${c.snippet}`)
     .join("\n\n");
 }
 
-export async function executeOpeningStatements(
-  question: string,
-  sources: Source[],
+// Select 3 core participants + 1 wildcard
+export function selectDebateParticipants(sessionId: string): {
+  core: Persona[];
+  wildcard: Persona;
+} {
+  const shuffled = shuffleWithSeed(PERSONA_POOL, `${sessionId}:personas`);
+  // Ensure we have enough personas
+  if (shuffled.length < 4) {
+    throw new Error("Not enough personas in the pool to start a debate");
+  }
+
+  const wildcard = shuffled[3];
+  if (!wildcard) {
+    throw new Error("Wildcard persona missing from selection");
+  }
+
+  return {
+    core: shuffled.slice(0, 3),
+    wildcard,
+  };
+}
+
+function assignParticipant(
+  sessionId: string,
+  persona: Persona,
+  isWildcard: boolean
+): AssignedParticipant {
+  const providerId = selectProviderIdForPersona(persona, sessionId);
+  return {
+    persona,
+    providerId,
+    agent: getAgentLabel(persona.name, providerId),
+    isWildcard,
+  };
+}
+
+function toSessionParticipant(p: AssignedParticipant): SessionParticipant {
+  return {
+    personaId: p.persona.id,
+    name: p.persona.name,
+    role: p.persona.role,
+    description: p.persona.description,
+    providerId: p.providerId,
+    agent: p.agent,
+    isWildcard: p.isWildcard,
+  };
+}
+
+function assignDebateParticipants(sessionId: string): {
+  core: AssignedParticipant[];
+  wildcard: AssignedParticipant;
+  all: AssignedParticipant[];
+  sessionParticipants: SessionParticipant[];
+} {
+  const { core, wildcard } = selectDebateParticipants(sessionId);
+  const assignedCore = core.map((p) => assignParticipant(sessionId, p, false));
+  const assignedWildcard = assignParticipant(sessionId, wildcard, true);
+  const all = [...assignedCore, assignedWildcard];
+  return {
+    core: assignedCore,
+    wildcard: assignedWildcard,
+    all,
+    sessionParticipants: all.map(toSessionParticipant),
+  };
+}
+
+export async function executePitchRound(
+  topic: string,
+  participants: AssignedParticipant[],
+  contexts: Context[],
   onEvent: EventCallback
 ): Promise<DebateMessage[]> {
-  console.log(`[Debate] Starting opening statements`);
-  const sourcesContext = formatSourcesContext(sources);
+  console.log(`[Debate] Starting Round 1: The Pitch`);
+  const contextsText = contexts.length > 0 ? formatContextsContext(contexts) : "";
 
-  const openingPromises = DEBATE_PARTICIPANTS.map(async (role) => {
-    const messages = [
-      {
-        role: "system" as const,
-        content: `${getAgenda(role)}\n\nYou are participating in a research debate about: "${question}"\n\nGive your opening statement based on the sources provided. Include:\n1. Your initial position (for/against/neutral/mixed)\n2. 2-3 key points from your perspective\n3. Any concerns or questions you want to raise\n\nBe concise (150-200 words).`,
-      },
-      {
-        role: "user" as const,
-        content: `Sources:\n${sourcesContext}\n\nProvide your opening statement.`,
-      },
-    ];
+  const pitchPromises = participants.map(async (participant) => {
+    const persona = participant.persona;
+    try {
+      const messages = [
+        {
+          role: "system" as const,
+          content: `${persona.agenda}\n\nYou are participating in a debate about: "${topic}"\n\nMake a high-impact elevator pitch for your perspective. Hook the audience immediately.\n\nBe extremely concise (max 100 words).`,
+        },
+        {
+          role: "user" as const,
+          content: `Debate Topic: ${topic}${contextsText ? `\n\nContext:\n${contextsText}` : "\n\nProvide your opening pitch."}`,
+        },
+      ];
 
-    const content = await callAgent(role as AgentRole, messages);
+      const content = await callProvider(participant.providerId, messages);
 
-    const debateMessage: DebateMessage = {
-      id: createDebateMessageId(),
-      role,
-      agent: getAgentDisplayName(role as AgentRole),
-      round: DEBATE_ROUND_TYPES.OPENING,
-      roundNumber: 3,
-      target: "all",
-      content,
-      position: extractPosition(content),
-      keyPoints: extractKeyPoints(content),
-      timestamp: new Date(),
-    };
+      const debateMessage: DebateMessage = {
+        id: createDebateMessageId(),
+        role: persona.role,
+        personaId: persona.id,
+        agent: participant.agent,
+        round: DEBATE_ROUND_TYPES.PITCH,
+        roundNumber: 1,
+        target: "all",
+        content,
+        position: extractPosition(content),
+        keyPoints: extractKeyPoints(content),
+        timestamp: new Date(),
+      };
 
-    onEvent({
-      type: "message",
-      data: {
-        role,
-        content: `Opening statement delivered`,
-        agent: debateMessage.agent,
-        timestamp: debateMessage.timestamp,
-      },
-    });
+      onEvent({
+        type: "debate_message",
+        data: debateMessage,
+      });
 
-    return debateMessage;
+      onEvent({
+        type: "message",
+        data: {
+          role: persona.role,
+          content: `Pitch delivered`,
+          agent: debateMessage.agent,
+          timestamp: debateMessage.timestamp,
+        },
+      });
+
+      return debateMessage;
+    } catch (error) {
+      console.error(`[Debate] Error generating pitch for ${persona.role}:`, error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      onEvent({
+        type: "error",
+        data: { error: `${persona.role} pitch failed: ${errorMessage}` },
+      });
+      // Return a fallback message
+      return {
+        id: createDebateMessageId(),
+        role: persona.role,
+        personaId: persona.id,
+        agent: participant.agent,
+        round: DEBATE_ROUND_TYPES.PITCH,
+        roundNumber: 1,
+        target: "all",
+        content: `[Error: Could not generate pitch. ${errorMessage}]`,
+        timestamp: new Date(),
+      };
+    }
   });
 
-  const statements = await Promise.all(openingPromises);
-  console.log(`[Debate] Opening statements complete`);
+  const statements = await Promise.all(pitchPromises);
+  console.log(`[Debate] Pitch round complete`);
   return statements;
 }
 
-export async function executeCrossExamination(
-  question: string,
-  openingStatements: DebateMessage[],
-  onEvent: EventCallback
-): Promise<DebateMessage[]> {
-  console.log(`[Debate] Starting cross-examination`);
-  const crossExamMessages: DebateMessage[] = [];
-
-  // Each participant questions the next one in sequence
-  const pairs: Array<[DebateParticipant, DebateParticipant]> = [
-    [AGENT_ROLES.SOURCE_CRITIC, AGENT_ROLES.SYNTHESIZER],
-    [AGENT_ROLES.SYNTHESIZER, AGENT_ROLES.SKEPTIC],
-    [AGENT_ROLES.SKEPTIC, AGENT_ROLES.SOURCE_CRITIC],
-  ];
-
-  for (const [questioner, responder] of pairs) {
-    const questStatement = openingStatements.find((s) => s.role === questioner);
-    const respStatement = openingStatements.find((s) => s.role === responder);
-
-    if (!questStatement || !respStatement) continue;
-
-    const messages = [
-      {
-        role: "system" as const,
-        content: `${getAgenda(questioner)}\n\nYou are in the cross-examination round. Question the ${responder}'s opening statement. Be direct and probe weaknesses in their argument.\n\nBe concise (100-150 words).`,
-      },
-      {
-        role: "user" as const,
-        content: `Research question: "${question}"\n\nYour opening statement:\n${questStatement.content}\n\n${responder}'s opening statement:\n${respStatement.content}\n\nQuestion their position and reasoning.`,
-      },
-    ];
-
-    const content = await callAgent(questioner as AgentRole, messages);
-
-    const debateMessage: DebateMessage = {
-      id: createDebateMessageId(),
-      role: questioner,
-      agent: getAgentDisplayName(questioner as AgentRole),
-      round: DEBATE_ROUND_TYPES.CROSS_EXAM,
-      roundNumber: 4,
-      target: responder,
-      content,
-      timestamp: new Date(),
-    };
-
-    crossExamMessages.push(debateMessage);
-
-    onEvent({
-      type: "message",
-      data: {
-        role: questioner,
-        content: `Cross-examined ${responder}`,
-        agent: debateMessage.agent,
-        timestamp: debateMessage.timestamp,
-      },
-    });
-  }
-
-  console.log(`[Debate] Cross-examination complete`);
-  return crossExamMessages;
+interface CrossFireParams {
+  topic: string;
+  participants: AssignedParticipant[];
+  wildcard: AssignedParticipant;
+  pitchMessages: DebateMessage[];
+  onEvent: EventCallback;
 }
 
-export async function executeRebuttal(
-  question: string,
-  openingStatements: DebateMessage[],
-  crossExamMessages: DebateMessage[],
-  onEvent: EventCallback
-): Promise<DebateMessage[]> {
-  console.log(`[Debate] Starting rebuttal round`);
-  const rebuttalMessages: DebateMessage[] = [];
-
-  for (const role of DEBATE_PARTICIPANTS) {
-    const myOpening = openingStatements.find((s) => s.role === role);
-    const questionsToMe = crossExamMessages.filter((m) => m.target === role);
-    const otherOpenings = openingStatements.filter((s) => s.role !== role);
-
-    if (!myOpening) continue;
-
-    const challengesText = questionsToMe.map((q) => `${q.role}: ${q.content}`).join("\n\n");
-
-    const othersText = otherOpenings.map((o) => `${o.role}: ${o.content}`).join("\n\n");
-
-    const messages = [
-      {
-        role: "system" as const,
-        content: `${getAgenda(role as DebateParticipant)}\n\nYou are in the rebuttal round. Defend your position against challenges, acknowledge valid points from others, and refine your position if needed.\n\nInclude:\n1. What you still maintain\n2. What you now agree with (if anything)\n3. Your refined position\n\nBe concise (150-200 words).`,
-      },
-      {
-        role: "user" as const,
-        content: `Research question: "${question}"\n\nYour opening statement:\n${myOpening.content}\n\nChallenges to your position:\n${challengesText || "None"}\n\nOther perspectives:\n${othersText}\n\nProvide your rebuttal and refined position.`,
-      },
-    ];
-
-    const content = await callAgent(role as AgentRole, messages);
-
-    const debateMessage: DebateMessage = {
-      id: createDebateMessageId(),
-      role,
-      agent: getAgentDisplayName(role as AgentRole),
-      round: DEBATE_ROUND_TYPES.REBUTTAL,
-      roundNumber: 5,
-      target: "all",
-      content,
-      revisions: extractRevisions(content),
-      timestamp: new Date(),
-    };
-
-    rebuttalMessages.push(debateMessage);
-
-    onEvent({
-      type: "message",
-      data: {
-        role,
-        content: `Rebuttal delivered`,
-        agent: debateMessage.agent,
-        timestamp: debateMessage.timestamp,
-      },
-    });
-  }
-
-  console.log(`[Debate] Rebuttal round complete`);
-  return rebuttalMessages;
+interface WildcardChallengeParams {
+  wildcard: AssignedParticipant;
+  targetParticipant: AssignedParticipant;
+  targetPitch: DebateMessage;
+  topic: string;
+  onEvent: EventCallback;
 }
 
-export async function executeFinalPositions(
-  question: string,
-  openingStatements: DebateMessage[],
-  rebuttalMessages: DebateMessage[],
-  onEvent: EventCallback
-): Promise<DebateMessage[]> {
-  console.log(`[Debate] Starting final positions`);
-
-  const finalPromises = DEBATE_PARTICIPANTS.map(async (role) => {
-    const myOpening = openingStatements.find((s) => s.role === role);
-    const myRebuttal = rebuttalMessages.find((s) => s.role === role);
-    const otherRebuttals = rebuttalMessages.filter((s) => s.role !== role);
-
-    const othersText = otherRebuttals.map((r) => `${r.role}: ${r.content}`).join("\n\n");
-
+async function generateWildcardChallenge(
+  params: WildcardChallengeParams
+): Promise<DebateMessage | null> {
+  const { wildcard, targetParticipant, targetPitch, topic, onEvent } = params;
+  const wildcardPersona = wildcard.persona;
+  const targetPersona = targetParticipant.persona;
+  try {
     const messages = [
       {
         role: "system" as const,
-        content: `${getAgenda(role as DebateParticipant)}\n\nThis is the final round. State your final position clearly.\n\nInclude:\n1. Your final position (for/against/neutral/mixed)\n2. Key conclusions (2-3 points)\n3. What changed from your opening (if anything)\n4. Remaining uncertainties\n\nBe concise (150-200 words).`,
+        content: `${wildcardPersona.agenda}\n\nYou are the WILDCARD entering the debate. Challenge the ${targetPersona.role}'s perspective with a completely new angle.\n\nBe concise and provocative (max 75 words).`,
       },
       {
         role: "user" as const,
-        content: `Research question: "${question}"\n\nYour opening:\n${myOpening?.content || "N/A"}\n\nYour rebuttal:\n${myRebuttal?.content || "N/A"}\n\nOther final rebuttals:\n${othersText}\n\nState your final position.`,
+        content: `Debate Topic: "${topic}"\n\n${targetPersona.role}'s Pitch: "${targetPitch.content}"\n\nChallenge them!`,
       },
     ];
 
-    const content = await callAgent(role as AgentRole, messages);
+    const content = await callProvider(wildcard.providerId, messages);
 
-    const debateMessage: DebateMessage = {
+    const wildcardChallenge: DebateMessage = {
       id: createDebateMessageId(),
-      role,
-      agent: getAgentDisplayName(role as AgentRole),
-      round: DEBATE_ROUND_TYPES.FINAL,
-      roundNumber: 6,
-      target: "all",
+      role: wildcardPersona.role,
+      personaId: wildcardPersona.id,
+      agent: wildcard.agent,
+      round: DEBATE_ROUND_TYPES.CROSS_FIRE,
+      roundNumber: 2,
+      target: targetPersona.role,
       content,
-      position: extractPosition(content),
-      keyPoints: extractKeyPoints(content),
-      revisions: extractRevisions(content),
       timestamp: new Date(),
     };
 
+    onEvent({ type: "debate_message", data: wildcardChallenge });
     onEvent({
       type: "message",
       data: {
-        role,
-        content: `Final position stated`,
-        agent: debateMessage.agent,
-        timestamp: debateMessage.timestamp,
+        role: wildcardPersona.role,
+        content: "Wildcard challenge!",
+        agent: wildcardChallenge.agent,
+        timestamp: new Date(),
       },
     });
 
-    return debateMessage;
+    return wildcardChallenge;
+  } catch (error) {
+    console.error(`[Debate] Wildcard challenge failed:`, error);
+    return null;
+  }
+}
+
+async function generateCrossFireResponse(
+  targetParticipant: AssignedParticipant,
+  wildcard: AssignedParticipant,
+  challenge: DebateMessage,
+  onEvent: EventCallback
+): Promise<DebateMessage | null> {
+  const targetPersona = targetParticipant.persona;
+  const wildcardPersona = wildcard.persona;
+  try {
+    const messages = [
+      {
+        role: "system" as const,
+        content: `${targetPersona.agenda}\n\nA Wildcard (${wildcardPersona.role}) has challenged you. Respond immediately and defend your ground.\n\nFlash message (max 50 words).`,
+      },
+      {
+        role: "user" as const,
+        content: `Challenge from ${wildcardPersona.role}: "${challenge.content}"\n\nRespond!`,
+      },
+    ];
+
+    const content = await callProvider(targetParticipant.providerId, messages);
+
+    const responseMsg: DebateMessage = {
+      id: createDebateMessageId(),
+      role: targetPersona.role,
+      personaId: targetPersona.id,
+      agent: targetParticipant.agent,
+      round: DEBATE_ROUND_TYPES.CROSS_FIRE,
+      roundNumber: 2,
+      target: wildcardPersona.role,
+      content,
+      timestamp: new Date(),
+    };
+
+    onEvent({ type: "debate_message", data: responseMsg });
+    return responseMsg;
+  } catch (error) {
+    console.error(`[Debate] Cross-fire message failed:`, error);
+    return null;
+  }
+}
+
+function getCrossFireTarget(
+  participants: AssignedParticipant[],
+  pitchMessages: DebateMessage[]
+): { targetParticipant: AssignedParticipant; targetPitch: DebateMessage } | null {
+  if (participants.length === 0) {
+    console.error("[Debate] No participants available for cross-fire");
+    return null;
+  }
+
+  const targetIndex = Math.floor(Math.random() * participants.length);
+  const targetParticipant = participants[targetIndex];
+  if (!targetParticipant) {
+    console.error("[Debate] Target persona missing for cross-fire");
+    return null;
+  }
+
+  const targetPitch = pitchMessages.find((m) => m.personaId === targetParticipant.persona.id);
+  if (!targetPitch) {
+    console.error("Target pitch not found for cross-fire");
+    return null;
+  }
+
+  return { targetParticipant, targetPitch };
+}
+
+export async function executeCrossFireRound(params: CrossFireParams): Promise<DebateMessage[]> {
+  const { topic, participants, wildcard, pitchMessages, onEvent } = params;
+  console.log(`[Debate] Starting Round 2: Cross-Fire (Wildcard enters)`);
+  const crossFireMessages: DebateMessage[] = [];
+
+  const target = getCrossFireTarget(participants, pitchMessages);
+  if (!target) return [];
+  const { targetParticipant, targetPitch } = target;
+
+  const challenge = await generateWildcardChallenge({
+    wildcard,
+    targetParticipant,
+    targetPitch,
+    topic,
+    onEvent,
   });
 
-  const finalPositions = await Promise.all(finalPromises);
-  console.log(`[Debate] Final positions complete`);
-  return finalPositions;
+  if (challenge) {
+    crossFireMessages.push(challenge);
+    const counterMessage = await generateCrossFireResponse(
+      targetParticipant,
+      wildcard,
+      challenge,
+      onEvent
+    );
+    if (counterMessage) {
+      crossFireMessages.push(counterMessage);
+    }
+  }
+
+  return crossFireMessages;
+}
+
+export async function executeStressTestRound(
+  topic: string,
+  participants: AssignedParticipant[], // Includes core + wildcard
+  onEvent: EventCallback
+): Promise<DebateMessage[]> {
+  console.log(`[Debate] Starting Round 3: Stress Test`);
+
+  // 1. Moderator generates scenario
+  let scenario = "";
+  try {
+    const messages = [
+      {
+        role: "system" as const,
+        content:
+          "You are the Debate Moderator. Generate a specific, challenging hypothetical failure scenario related to the topic. Force the debaters to apply their abstract ideas to a concrete problem.",
+      },
+      {
+        role: "user" as const,
+        content: `Topic: ${topic}\n\nGenerate a 'Stress Test' scenario (max 2 sentences).`,
+      },
+    ];
+    scenario = await callAgent("Moderator", messages);
+
+    // Emit moderator message
+    onEvent({
+      type: "message",
+      data: {
+        role: "Moderator",
+        content: `Stress Test Scenario: ${scenario}`,
+        agent: getAgentDisplayName("Moderator"),
+        timestamp: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error("Failed to generate stress test scenario", error);
+    scenario = "Imagine this approach fails catastrophically in 5 years. Why?";
+  }
+
+  // 2. Participants respond
+  const responses = await Promise.all(
+    participants.map(async (participant) => {
+      const persona = participant.persona;
+      try {
+        const messages = [
+          {
+            role: "system" as const,
+            content: `${persona.agenda}\n\nThe Moderator has posed a Stress Test scenario. Explain how your perspective handles this specific failure mode.\n\nBe realistic (max 100 words).`,
+          },
+          {
+            role: "user" as const,
+            content: `Scenario: "${scenario}"\n\nYour message?`,
+          },
+        ];
+
+        const content = await callProvider(participant.providerId, messages);
+
+        const msg: DebateMessage = {
+          id: createDebateMessageId(),
+          role: persona.role,
+          personaId: persona.id,
+          agent: participant.agent,
+          round: DEBATE_ROUND_TYPES.STRESS_TEST,
+          roundNumber: 3,
+          target: "Moderator",
+          content: `[Re: ${scenario}] ${content}`,
+          timestamp: new Date(),
+        };
+
+        onEvent({ type: "debate_message", data: msg });
+        return msg;
+      } catch (error) {
+        console.error(`Stress test message failed for ${persona.role}`, error);
+        return null;
+      }
+    })
+  );
+
+  return responses.filter((r): r is DebateMessage => r !== null);
+}
+
+export async function executeSteelManRound(
+  topic: string,
+  participants: AssignedParticipant[],
+  onEvent: EventCallback
+): Promise<DebateMessage[]> {
+  console.log(`[Debate] Starting Round 4: Steel Man`);
+
+  // Each participant steel-mans a generic opposing view
+  const responses = await Promise.all(
+    participants.map(async (participant) => {
+      const persona = participant.persona;
+      try {
+        const messages = [
+          {
+            role: "system" as const,
+            content: `${persona.agenda}\n\nNow, articulate the STRONGEST version of the opposing argument. Demonstrate intellectual honesty.\n\nStart with 'The strongest argument against my view is...'\n\n(Max 100 words).`,
+          },
+          {
+            role: "user" as const,
+            content: `Topic: ${topic}\n\nSteel-man the opposition.`,
+          },
+        ];
+
+        const content = await callProvider(participant.providerId, messages);
+
+        const msg: DebateMessage = {
+          id: createDebateMessageId(),
+          role: persona.role,
+          personaId: persona.id,
+          agent: participant.agent,
+          round: DEBATE_ROUND_TYPES.STEEL_MAN,
+          roundNumber: 4,
+          target: "all",
+          content,
+          timestamp: new Date(),
+        };
+
+        onEvent({ type: "debate_message", data: msg });
+        return msg;
+      } catch (error) {
+        console.error(`Steel man failed for ${persona.role}`, error);
+        return null;
+      }
+    })
+  );
+
+  return responses.filter((r): r is DebateMessage => r !== null);
+}
+
+export async function executeConsensusRound(
+  topic: string,
+  participants: AssignedParticipant[],
+  allPreviousMessages: DebateMessage[],
+  onEvent: EventCallback
+): Promise<DebateMessage[]> {
+  console.log(`[Debate] Starting Round 5: Consensus`);
+
+  const debateRecap = allPreviousMessages
+    .slice(-12)
+    .map((m) => `- [R${m.roundNumber}] ${m.role}: ${m.content.substring(0, 200)}...`)
+    .join("\n");
+
+  const responses = await Promise.all(
+    participants.map(async (participant) => {
+      const persona = participant.persona;
+      try {
+        const messages = [
+          {
+            role: "system" as const,
+            content: `${persona.agenda}\n\nFinal verdict. Give your closing statement and a Confidence Score (0-100%) in the proposed path forward.\n\nFormat:\nStatement: [Your text]\nScore: [0-100]`,
+          },
+          {
+            role: "user" as const,
+            content: `Topic: ${topic}\n\nRecent debate messages:\n${debateRecap || "(none)"}\n\nProvide your final verdict and confidence score.`,
+          },
+        ];
+
+        const rawContent = await callProvider(participant.providerId, messages);
+        const scoreMatch = rawContent.match(/Score:\s*(\d+)/i);
+        const scoreText = scoreMatch?.[1];
+        const score = scoreText ? parseInt(scoreText, 10) : 50;
+        const content = rawContent
+          .replace(/Score:\s*\d+/i, "")
+          .replace("Statement:", "")
+          .trim();
+
+        const msg: DebateMessage = {
+          id: createDebateMessageId(),
+          role: persona.role,
+          personaId: persona.id,
+          agent: participant.agent,
+          round: DEBATE_ROUND_TYPES.CONSENSUS,
+          roundNumber: 5,
+          target: "all",
+          content,
+          confidenceScore: Math.min(100, Math.max(0, score)),
+          timestamp: new Date(),
+        };
+
+        onEvent({ type: "debate_message", data: msg });
+        onEvent({
+          type: "message",
+          data: {
+            role: persona.role,
+            content: `Final verdict given (Confidence: ${msg.confidenceScore}%)`,
+            agent: msg.agent,
+            timestamp: new Date(),
+          },
+        });
+
+        return msg;
+      } catch (error) {
+        console.error(`Consensus failed for ${persona.role}`, error);
+        return null;
+      }
+    })
+  );
+
+  return responses.filter((r): r is DebateMessage => r !== null);
 }
 
 export async function runDebate(
-  question: string,
-  sources: Source[],
+  sessionId: string,
+  topic: string,
+  contexts: Context[],
   onEvent: EventCallback
-): Promise<DebateMessage[]> {
-  console.log(`[Debate] Starting full debate for: ${question.substring(0, 50)}...`);
+): Promise<{ messages: DebateMessage[]; participants: SessionParticipant[] }> {
+  console.log(`[Debate] Starting Arena for: ${topic.substring(0, 50)}...`);
+
+  // 1. Selection
+  const { core, wildcard, all, sessionParticipants } = assignDebateParticipants(sessionId);
+
+  onEvent({ type: "participants", data: sessionParticipants });
+
+  // Notify about selection
+  onEvent({
+    type: "message",
+    data: {
+      role: "System",
+      content: `Selected participants: ${core.map((p) => p.persona.role).join(", ")}`,
+      timestamp: new Date(),
+    },
+  });
 
   const allDebateMessages: DebateMessage[] = [];
 
-  // Round 3: Opening Statements (parallel)
-  const openingStatements = await executeOpeningStatements(question, sources, onEvent);
-  allDebateMessages.push(...openingStatements);
+  // Round 1: The Pitch
+  const pitchMessages = await executePitchRound(topic, core, contexts, onEvent);
+  allDebateMessages.push(...pitchMessages);
 
-  // Round 4: Cross-Examination (sequential)
-  const crossExamMessages = await executeCrossExamination(question, openingStatements, onEvent);
-  allDebateMessages.push(...crossExamMessages);
+  // Round 2: Cross-Fire (Wildcard enters)
+  const crossFireMessages = await executeCrossFireRound({
+    topic,
+    participants: core,
+    wildcard,
+    pitchMessages,
+    onEvent,
+  });
+  allDebateMessages.push(...crossFireMessages);
 
-  // Round 5: Rebuttal (sequential)
-  const rebuttalMessages = await executeRebuttal(
-    question,
-    openingStatements,
-    crossExamMessages,
-    onEvent
-  );
-  allDebateMessages.push(...rebuttalMessages);
+  // Round 3: Stress Test (All participants including wildcard)
+  const stressMessages = await executeStressTestRound(topic, all, onEvent);
+  allDebateMessages.push(...stressMessages);
 
-  // Round 6: Final Positions (parallel)
-  const finalPositions = await executeFinalPositions(
-    question,
-    openingStatements,
-    rebuttalMessages,
-    onEvent
-  );
-  allDebateMessages.push(...finalPositions);
+  // Round 4: Steel Man
+  const steelManMessages = await executeSteelManRound(topic, all, onEvent);
+  allDebateMessages.push(...steelManMessages);
 
-  console.log(`[Debate] Full debate complete with ${allDebateMessages.length} messages`);
-  return allDebateMessages;
+  // Round 5: Consensus
+  const consensusMessages = await executeConsensusRound(topic, all, allDebateMessages, onEvent);
+  allDebateMessages.push(...consensusMessages);
+
+  console.log(`[Debate] Arena complete with ${allDebateMessages.length} messages`);
+
+  return {
+    messages: allDebateMessages,
+    participants: sessionParticipants,
+  };
 }
 
-// Position keywords mapped to their positions
+// Helpers
 const POSITION_KEYWORDS: Array<{ keywords: string[]; position: DebateMessage["position"] }> = [
   { keywords: ["strongly support", "strongly for"], position: "for" },
   { keywords: ["strongly against", "oppose"], position: "against" },
@@ -327,7 +648,6 @@ const POSITION_KEYWORDS: Array<{ keywords: string[]; position: DebateMessage["po
   { keywords: ["disagree", "against"], position: "against" },
 ];
 
-// Helper functions to extract structured data from agent outputs
 function extractPosition(content: string): DebateMessage["position"] {
   const lower = content.toLowerCase();
   for (const { keywords, position } of POSITION_KEYWORDS) {
@@ -341,10 +661,8 @@ function extractPosition(content: string): DebateMessage["position"] {
 function extractKeyPoints(content: string): string[] {
   const lines = content.split("\n");
   const points: string[] = [];
-
   for (const line of lines) {
     const trimmed = line.trim();
-    // Match numbered points or bullet points
     if (/^(\d+\.|\*|-)\s+/.test(trimmed)) {
       const point = trimmed.replace(/^(\d+\.|\*|-)\s+/, "").trim();
       if (point.length > 10 && point.length < 200) {
@@ -352,34 +670,5 @@ function extractKeyPoints(content: string): string[] {
       }
     }
   }
-
   return points.slice(0, 5);
-}
-
-function extractRevisions(content: string): string | undefined {
-  const lower = content.toLowerCase();
-  const markers = [
-    "i now agree",
-    "i've changed",
-    "i have changed",
-    "i revised",
-    "i've revised",
-    "what changed",
-    "my position has shifted",
-    "i concede",
-  ];
-
-  for (const marker of markers) {
-    const idx = lower.indexOf(marker);
-    if (idx !== -1) {
-      // Extract the sentence containing the revision
-      const start = Math.max(0, content.lastIndexOf(".", idx) + 1);
-      const end = content.indexOf(".", idx + marker.length);
-      if (end > start) {
-        return content.substring(start, end + 1).trim();
-      }
-    }
-  }
-
-  return undefined;
 }
