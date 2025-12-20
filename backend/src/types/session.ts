@@ -29,6 +29,23 @@ export interface AgentMessage {
   timestamp: Date;
 }
 
+export type DebateRoundType = "opening" | "cross_exam" | "rebuttal" | "final";
+export type DebatePosition = "for" | "against" | "neutral" | "mixed";
+
+export interface DebateMessage {
+  id: string;
+  role: string; // Agent role (e.g., "Synthesizer", "Skeptic", "Source Critic")
+  agent: string; // Display name of the agent
+  round: DebateRoundType;
+  roundNumber: number; // 3-6 in the full flow
+  target?: string; // Who the message is directed to (agent role or "all")
+  content: string;
+  position?: DebatePosition;
+  keyPoints?: string[]; // Main arguments/points
+  revisions?: string; // What changed from previous round
+  timestamp: Date;
+}
+
 export interface Session {
   id: string;
   question: string;
@@ -36,6 +53,7 @@ export interface Session {
   plan?: ResearchPlan;
   sources?: Source[];
   messages: AgentMessage[];
+  debate?: DebateMessage[]; // Structured debate messages
   answer?: string;
   answerAgentRole?: string; // "Synthesizer"
   answerAgent?: string; // Display name of the agent that generated the answer

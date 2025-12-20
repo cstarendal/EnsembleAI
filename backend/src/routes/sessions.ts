@@ -1,7 +1,13 @@
 import express from "express";
 import { z } from "zod";
 import { runBasicOrchestration } from "../orchestrator/basicOrchestrator.js";
-import type { Session, ResearchPlan, Source, AgentMessage } from "../types/session.js";
+import type {
+  Session,
+  ResearchPlan,
+  Source,
+  AgentMessage,
+  DebateMessage,
+} from "../types/session.js";
 import { SESSION_STATUS } from "../constants/ubiquitousLanguage.js";
 import type { OrchestratorEvent } from "../orchestrator/basicOrchestrator.js";
 
@@ -62,6 +68,10 @@ function applyEventToSession(session: Session, event: OrchestratorEvent): Sessio
   if (event.type === "message") {
     const message = event.data as AgentMessage;
     updated.messages = [...(updated.messages || []), message];
+  }
+
+  if (event.type === "debate") {
+    updated.debate = event.data as DebateMessage[];
   }
 
   return updated;

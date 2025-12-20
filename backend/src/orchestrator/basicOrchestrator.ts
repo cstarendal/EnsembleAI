@@ -1,9 +1,10 @@
 import { callAgent, getAgentDisplayName } from "../api/openRouter.js";
-import type { Session, ResearchPlan, Source } from "../types/session.js";
+import type { Session, ResearchPlan, Source, DebateMessage } from "../types/session.js";
 import { AGENT_ROLES, SESSION_STATUS } from "../constants/ubiquitousLanguage.js";
+import { runDebate } from "./debateOrchestrator.js";
 
 export interface OrchestratorEvent {
-  type: "status" | "message" | "plan" | "sources" | "answer" | "error";
+  type: "status" | "message" | "plan" | "sources" | "debate" | "answer" | "error";
   data: unknown;
 }
 
@@ -55,6 +56,16 @@ async function executeCritiquingPhase(
   return critiquedSources;
 }
 
+async function executeDebatePhase(
+  question: string,
+  sources: Source[],
+  onEvent: EventCallback
+): Promise<DebateMessage[]> {
+  const debateMessages = await runDebate(question, sources, onEvent);
+  onEvent({ type: "debate", data: debateMessages });
+  return debateMessages;
+}
+
 async function executeSynthesisPhase(
   question: string,
   plan: ResearchPlan,
@@ -100,12 +111,17 @@ async function executeFullOrchestration(
   const sources = await executeCritiquingPhase(rawSources, session3.question, onEvent);
 
   const session4 = updateSessionStatus(session3, SESSION_STATUS.DEBATING, onEvent);
-  const answer = await executeSynthesisPhase(session4.question, plan, sources, onEvent);
+  const debate = await executeDebatePhase(session4.question, sources, onEvent);
+  console.log(`[Orchestrator] Debate complete with ${debate.length} messages`);
+
+  const session5 = updateSessionStatus(session4, SESSION_STATUS.FINALIZING, onEvent);
+  const answer = await executeSynthesisPhase(session5.question, plan, sources, onEvent);
 
   const finalSession: Session = {
-    ...session4,
+    ...session5,
     plan,
     sources,
+    debate,
     answer,
     answerAgentRole: AGENT_ROLES.SYNTHESIZER,
     answerAgent: getAgentDisplayName(AGENT_ROLES.SYNTHESIZER),
