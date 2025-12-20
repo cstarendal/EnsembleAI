@@ -55,6 +55,55 @@ async function executeSynthesisPhase(
   return answer;
 }
 
+function handleOrchestrationError(
+  error: unknown,
+  sessionId: string,
+  currentSession: Session,
+  onEvent: EventCallback
+): Session {
+  const errorMessage = error instanceof Error ? error.message : "Unknown error";
+  console.error(`[Orchestrator] Error for session ${sessionId}:`, errorMessage);
+  if (error instanceof Error && error.stack) {
+    console.error(`[Orchestrator] Stack trace:`, error.stack);
+  }
+  onEvent({
+    type: "error",
+    data: { error: errorMessage },
+  });
+  return { ...currentSession, status: SESSION_STATUS.ERROR };
+}
+
+async function executeFullOrchestration(
+  session: Session,
+  onEvent: EventCallback
+): Promise<Session> {
+  const session1 = updateSessionStatus(session, SESSION_STATUS.PLANNING, onEvent);
+  console.log(`[Orchestrator] Status updated to PLANNING`);
+  const plan = await executePlanningPhase(session1, onEvent);
+  console.log(`[Orchestrator] Planning phase complete`);
+
+  const session2 = updateSessionStatus(session1, SESSION_STATUS.HUNTING, onEvent);
+  const rawSources = await executeHuntingPhase(plan, onEvent);
+
+  const session3 = updateSessionStatus(session2, SESSION_STATUS.CRITIQUING, onEvent);
+  const sources = await executeCritiquingPhase(rawSources, session3.question, onEvent);
+
+  const session4 = updateSessionStatus(session3, SESSION_STATUS.DEBATING, onEvent);
+  const answer = await executeSynthesisPhase(session4.question, plan, sources, onEvent);
+
+  const finalSession: Session = {
+    ...session4,
+    plan,
+    sources,
+    answer,
+    status: SESSION_STATUS.COMPLETE,
+    updatedAt: new Date(),
+  };
+  onEvent({ type: "status", data: { status: SESSION_STATUS.COMPLETE } });
+
+  return finalSession;
+}
+
 export async function runBasicOrchestration(
   session: Session,
   onEvent: EventCallback
@@ -63,43 +112,9 @@ export async function runBasicOrchestration(
   console.log(`[Orchestrator] Starting orchestration for session ${session.id}`);
 
   try {
-    const session1 = updateSessionStatus(currentSession, SESSION_STATUS.PLANNING, onEvent);
-    console.log(`[Orchestrator] Status updated to PLANNING`);
-    const plan = await executePlanningPhase(session1, onEvent);
-    console.log(`[Orchestrator] Planning phase complete`);
-
-    const session2 = updateSessionStatus(session1, SESSION_STATUS.HUNTING, onEvent);
-    const rawSources = await executeHuntingPhase(plan, onEvent);
-
-    const session3 = updateSessionStatus(session2, SESSION_STATUS.CRITIQUING, onEvent);
-    const sources = await executeCritiquingPhase(rawSources, session3.question, onEvent);
-
-    const session4 = updateSessionStatus(session3, SESSION_STATUS.DEBATING, onEvent);
-    const answer = await executeSynthesisPhase(session4.question, plan, sources, onEvent);
-
-    const finalSession: Session = {
-      ...session4,
-      plan,
-      sources,
-      answer,
-      status: SESSION_STATUS.COMPLETE,
-      updatedAt: new Date(),
-    };
-    onEvent({ type: "status", data: { status: SESSION_STATUS.COMPLETE } });
-
-    return finalSession;
+    return await executeFullOrchestration(currentSession, onEvent);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error(`[Orchestrator] Error for session ${session.id}:`, errorMessage);
-    if (error instanceof Error && error.stack) {
-      console.error(`[Orchestrator] Stack trace:`, error.stack);
-    }
-    onEvent({
-      type: "error",
-      data: { error: errorMessage },
-    });
-
-    return { ...currentSession, status: SESSION_STATUS.ERROR };
+    return handleOrchestrationError(error, session.id, currentSession, onEvent);
   }
 }
 
