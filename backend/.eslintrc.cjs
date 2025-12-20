@@ -9,6 +9,8 @@ module.exports = {
   parser: "@typescript-eslint/parser",
   plugins: ["@typescript-eslint"],
   rules: {
+    // Prevent accidental introduction of test-only deps that are not installed
+    "no-restricted-imports": ["error", {"paths": [{"name": "supertest", "message": "Avoid supertest; use fetch + ephemeral server (keeps backend tests dependency-free)."}]}],
     // Strict complexity rules for src/
     "complexity": ["error", { max: 12 }],
     "max-depth": ["error", { max: 4 }],
